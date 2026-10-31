@@ -173,7 +173,7 @@
                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200"
                   >
                     <ClockIcon class="w-3.5 h-3.5 text-amber-600" />
-                    <span>Menunggu Konfirmasi</span>
+                    <span>Menunggu Paraf Guru</span>
                   </span>
 
                   <span
@@ -305,7 +305,7 @@
               >
                 <option value="ALL">Semua Status</option>
                 <option value="TERVERIFIKASI">Terverifikasi</option>
-                <option value="PENDING">Menunggu Konfirmasi</option>
+                <option value="PENDING">Menunggu Paraf Guru</option>
               </select>
             </div>
           </div>
@@ -1071,7 +1071,7 @@ const applyScheduleFilter = () => {
 
     let status = 'Belum Diisi'
     if (match) {
-      status = match.status === 'TERVERIFIKASI' ? 'Terverifikasi' : 'Menunggu Konfirmasi'
+      status = match.status === 'TERVERIFIKASI' ? 'Terverifikasi' : 'Menunggu Paraf Guru'
     }
 
     return {
