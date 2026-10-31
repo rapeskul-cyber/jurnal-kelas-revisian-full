@@ -121,7 +121,29 @@
 
 ---
 
-## 6. Cara Deploy Cepat ke Server VPS
+## 6. Revisi Feedback Testing & Fitur Baru (1 November 2026)
+1. **Penghapusan Status Subjektif "Perlu Pembinaan"**:
+   - Menghapus seluruh logika dan badge predikat subjektif (`Perlu Pembinaan`, `Sangat Baik`, `Cukup`, `Perlu Perhatian`) dari controller rekapitulasi `AttendanceController.php` dan tampilan `rekap-semester.vue`.
+   - Menggantinya dengan representasi murni data kuantitatif: Hadir, Sakit, Izin, dan Alfa tanpa stigma label.
+2. **Fitur "Siswa Tidak Berada di Jam Ini" (Siswa Cabut KBM)**:
+   - Menambahkan checklist/multi-select siswa pada modal form agenda KBM di sisi Guru (`jurnal-materi.vue`) dan Sekretaris (`jurnal-kelas.vue`).
+   - Menyimpan daftar siswa cabut (`absent_students`) ke dalam field JSON `notes` pada sesi jurnal KBM tersebut secara independen tanpa memodifikasi skema atau menimpa data presensi harian utama (`attendances`).
+3. **Penyatuan Menu Guru (`/jurnal-materi` & `/jurnal-kelas`)**:
+   - Menggabungkan alur kerja guru menjadi 1 halaman terpadu di `/jurnal-materi` menggunakan 2 Tab responsif:
+     - **Tab 1**: "Jadwal & Input Materi Hari Ini" (input materi, unggah modul/tugas, checklist siswa cabut, dan verifikasi KBM langsung).
+     - **Tab 2**: "Monitoring & Rekap Kelas" (filter rombel, kalender tanggal, statistik kehadiran, dan riwayat jurnal KBM).
+   - Memperbarui `frontend/config/access.ts` sehingga Guru memiliki 1 menu navigasi bersih: **"Jurnal KBM"** (`/jurnal-materi`). Halaman `/jurnal-kelas` otomatis mengarahkan guru ke tab monitoring.
+4. **Widget Timeline "Materi Belajar Hari Ini" di Dashboard Siswa & Ortu**:
+   - Menambahkan widget timeline sekuensial pada `dashboard.vue` untuk role Siswa dan Orang Tua.
+   - Endpoint `DashboardController.php` memetakan jadwal hari ini dengan jurnal KBM yang telah terlaksana, nama mapel, jam pelajaran, topik materi, serta indikator kehadiran di jam tersebut.
+5. **Kebijakan Arsitektur yang Tetap Dipatuhi**:
+   - Tanpa Geofencing/GPS (fokus jurnal KBM kelas; absensi gerbang sekolah dihandle eksternal).
+   - Mode SQLite WAL dan skema tabel presensi harian utama (`attendances`) tetap utuh.
+   - Skema warna Blue & White (`#0f47ad`, `#ffffff`) dan target ergonomis mobile 9:20 dipertahankan.
+
+---
+
+## 7. Cara Deploy Cepat ke Server VPS
 Jika ada perubahan kode di lokal:
 - Update file backend/frontend ke VPS menggunakan `scp` atau `cat` via SSH.
 - Untuk backend: Jalankan `php artisan config:clear` dan restart `php artisan serve --port=8010`.
