@@ -27,6 +27,10 @@ wa-gateway/.env*
 # misc
 .DS_Store
 *.pem
+*.pub
+*.key
+*.tar.gz
+scratch/
 
 # debug
 npm-debug.log*
