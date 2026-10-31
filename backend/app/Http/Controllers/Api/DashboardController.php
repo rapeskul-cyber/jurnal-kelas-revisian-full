@@ -222,6 +222,7 @@ class DashboardController extends Controller
             'recent_attendance' => $recentAttendance,
             'recent_materials' => $recentMaterials,
             'recent_journals' => $recentJournals,
+            'today_timeline' => $this->getTodayTimeline($classId, $today),
         ]);
     }
 
@@ -389,7 +390,83 @@ class DashboardController extends Controller
             'recent_attendance' => $recentAttendance,
             'recent_journals' => $recentJournals,
             'recent_leaves' => $recentLeaves,
+            'today_timeline' => $this->getTodayTimeline($classId, $today),
         ]);
+    }
+
+    private function getTodayTimeline($classId, $today)
+    {
+        $daysMap = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu',
+        ];
+        $dayOfWeekNumber = Carbon::parse($today)->dayOfWeekIso;
+        $currentDayName = $daysMap[$dayOfWeekNumber] ?? 'Senin';
+
+        // Ambil jadwal hari ini untuk kelas ini
+        $schedules = Schedule::where('class_id', $classId)
+            ->where('day', $currentDayName)
+            ->with(['subject', 'teacher'])
+            ->orderBy('start_time')
+            ->get();
+
+        // Jika akhir pekan atau jadwal hari ini belum ada, fallback ke hari Senin/jadwal aktif terdekat
+        if ($schedules->isEmpty()) {
+            $schedules = Schedule::where('class_id', $classId)
+                ->where('day', 'Senin')
+                ->with(['subject', 'teacher'])
+                ->orderBy('start_time')
+                ->get();
+        }
+
+        if ($schedules->isEmpty()) {
+            $schedules = Schedule::where('class_id', $classId)
+                ->with(['subject', 'teacher'])
+                ->orderBy('start_time')
+                ->limit(6)
+                ->get();
+        }
+
+        $todayJournals = ClassJournal::where('class_id', $classId)
+            ->whereDate('date', $today)
+            ->get()
+            ->keyBy('schedule_id');
+
+        return $schedules->values()->map(function ($sch, $index) use ($todayJournals) {
+            $journal = $todayJournals->get($sch->id);
+            $absentStudents = [];
+            $notes = $journal?->notes;
+            if ($notes && str_starts_with(trim($notes), '{')) {
+                $dec = json_decode($notes, true);
+                if (is_array($dec)) {
+                    $absentStudents = $dec['absent_students'] ?? [];
+                    $notes = $dec['notes'] ?? '';
+                }
+            }
+
+            $isDone = $journal && $journal->verification_status === 'TERVERIFIKASI';
+            $isPending = $journal && $journal->verification_status !== 'TERVERIFIKASI';
+
+            return [
+                'jam_ke' => 'Jam Ke-' . ($index + 1),
+                'time' => $sch->start_time . ' - ' . $sch->end_time,
+                'room' => $sch->room ?: 'Ruang Kelas',
+                'subject' => $sch->subject->name ?? 'Mata Pelajaran',
+                'subject_code' => $sch->subject->code ?? '',
+                'teacher_name' => $sch->teacher->name ?? 'Guru Pengajar',
+                'topic' => $journal?->activity ?? 'Menunggu KBM dimulai',
+                'notes' => $notes,
+                'absent_students' => $absentStudents,
+                'status' => $isDone ? 'TERLAKSANA' : ($isPending ? 'MENUNGGU_VERIFIKASI' : 'BELUM_DIMULAI'),
+                'status_label' => $isDone ? 'Terlaksana & Terverifikasi' : ($isPending ? 'Selesai (Menunggu Paraf)' : 'Belum Dimulai'),
+                'status_color' => $isDone ? 'emerald' : ($isPending ? 'blue' : 'gray'),
+            ];
+        });
     }
 
     private function sekretarisDashboard(User $user, $today)

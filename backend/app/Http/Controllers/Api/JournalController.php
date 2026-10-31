@@ -91,6 +91,16 @@ class JournalController extends Controller
 
         $journals = $query->get()->map(function ($j) {
             $timeSlot = ($j->schedule->start_time ?? '07:30') . ' - ' . ($j->schedule->end_time ?? '09:00');
+            $absentStudents = [];
+            $displayNotes = $j->notes;
+            if ($j->notes && str_starts_with(trim($j->notes), '{')) {
+                $decoded = json_decode($j->notes, true);
+                if (is_array($decoded)) {
+                    $displayNotes = $decoded['notes'] ?? '';
+                    $absentStudents = $decoded['absent_students'] ?? [];
+                }
+            }
+
             return [
                 'id' => $j->id,
                 'schedule_id' => $j->schedule_id,
@@ -104,7 +114,8 @@ class JournalController extends Controller
                 'subject' => $j->schedule->subject->name ?? ($j->notes ? explode(' | ', $j->activity)[0] : '-'),
                 'topic' => $j->notes ? explode(' | ', $j->activity)[0] : $j->activity,
                 'activity' => $j->activity,
-                'notes' => $j->notes,
+                'notes' => $displayNotes,
+                'absent_students' => $absentStudents,
                 'status' => $j->verification_status,
                 'confirmed_at' => $j->confirmed_at ? Carbon::parse($j->confirmed_at)->format('d M Y H:i') : null,
                 'confirmed_by' => $j->confirmedBy->name ?? null,
@@ -118,6 +129,17 @@ class JournalController extends Controller
             'data' => $journals,
             'schedules' => $schedules,
         ]);
+    }
+
+    public function getClassStudents(Request $request, $classId)
+    {
+        $students = User::where('class_id', $classId)
+            ->whereIn('role', ['SISWA', 'SEKRETARIS'])
+            ->orderBy('name')
+            ->select('id', 'name', 'nip_nis as nis', 'class_id')
+            ->get();
+
+        return response()->json($students);
     }
 
     public function getSchedules(Request $request)
@@ -211,12 +233,23 @@ class JournalController extends Controller
             $confirmedAt = Carbon::now();
         }
 
+        $absentStudents = $request->input('absent_students', []);
+        $notesInput = $request->input('notes', '');
+        if (!empty($absentStudents) && is_array($absentStudents)) {
+            $notesToStore = json_encode([
+                'notes' => $notesInput ?: '',
+                'absent_students' => $absentStudents,
+            ], JSON_UNESCAPED_UNICODE);
+        } else {
+            $notesToStore = $notesInput;
+        }
+
         $journal = ClassJournal::create([
             'class_id' => $classId,
             'schedule_id' => $schedule?->id,
             'date' => $date,
             'activity' => $activity,
-            'notes' => $request->notes,
+            'notes' => $notesToStore,
             'verification_status' => $status,
             'confirmed_by_id' => $confirmedById,
             'confirmed_at' => $confirmedAt,
@@ -289,9 +322,36 @@ class JournalController extends Controller
 
         $activity = $request->topic ? ($request->topic . ' - ' . $request->activity) : ($request->activity ?: $journal->activity);
 
+        $absentStudents = $request->input('absent_students');
+        $notesInput = $request->input('notes');
+
+        $notesToStore = $journal->notes;
+        if ($absentStudents !== null || $notesInput !== null) {
+            $currentAbsent = [];
+            $currentText = $journal->notes;
+            if ($journal->notes && str_starts_with(trim($journal->notes), '{')) {
+                $dec = json_decode($journal->notes, true);
+                if (is_array($dec)) {
+                    $currentAbsent = $dec['absent_students'] ?? [];
+                    $currentText = $dec['notes'] ?? '';
+                }
+            }
+            $finalAbsent = $absentStudents !== null ? $absentStudents : $currentAbsent;
+            $finalText = $notesInput !== null ? $notesInput : $currentText;
+
+            if (!empty($finalAbsent) && is_array($finalAbsent)) {
+                $notesToStore = json_encode([
+                    'notes' => $finalText ?: '',
+                    'absent_students' => $finalAbsent,
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                $notesToStore = $finalText;
+            }
+        }
+
         $journal->update([
             'activity' => $activity,
-            'notes' => $request->notes !== null ? $request->notes : $journal->notes,
+            'notes' => $notesToStore,
             'date' => $request->date ?: $journal->date,
             'schedule_id' => $request->schedule_id ?: $journal->schedule_id,
         ]);

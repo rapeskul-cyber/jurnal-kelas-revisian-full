@@ -21,9 +21,8 @@ export const ROLE_MENUS: Record<string, MenuItem[]> = {
   ],
   GURU_PENGAJAR: [
     { name: 'Dashboard', to: '/dashboard', icon: 'Home' },
-    { name: 'Jurnal Materi', to: '/jurnal-materi', icon: 'Edit3' },
-    { name: 'Rekap Otomatis', to: '/rekap-semester', icon: 'BarChart2' },
-    { name: 'Agenda KBM Kelas', to: '/jurnal-kelas', icon: 'FileText' },
+    { name: 'Jurnal KBM', to: '/jurnal-materi', icon: 'BookOpen' },
+    { name: 'Rekap Presensi', to: '/rekap-semester', icon: 'BarChart2' },
     { name: 'Laporan Jurnal', to: '/laporan-jurnal', icon: 'FolderOpen' },
   ],
   GURU_PEMBIMBING: [

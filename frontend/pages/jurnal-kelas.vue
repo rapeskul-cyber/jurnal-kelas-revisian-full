@@ -238,6 +238,19 @@
                 <p v-if="agenda.notes" class="text-gray-500 italic text-[11px] pt-1 border-t border-gray-200/50">Catatan: {{ agenda.notes }}</p>
               </div>
 
+              <!-- Alert Siswa Tidak Berada di Jam Ini -->
+              <div v-if="agenda.absent_students && agenda.absent_students.length > 0" class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1">
+                <div class="font-bold flex items-center gap-1.5 text-rose-700">
+                  <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ agenda.absent_students.length }} Siswa Cabut / Tidak di Kelas Jam Ini:</span>
+                </div>
+                <div class="flex flex-wrap gap-1 pt-0.5">
+                  <span v-for="s in agenda.absent_students" :key="s.id" class="px-2 py-0.5 rounded-md bg-white border border-rose-200 text-[11px] font-semibold text-rose-700 shadow-2xs">
+                    {{ s.name }}
+                  </span>
+                </div>
+              </div>
+
               <!-- Action buttons on mobile -->
               <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-100">
                 <button
@@ -323,8 +336,16 @@
                   </div>
                 </td>
 
-                <td class="py-3.5 px-4 text-gray-500 max-w-xs whitespace-nowrap">
-                  <span class="truncate block" :title="agenda.notes || '-'">{{ agenda.notes || '-' }}</span>
+                <td class="py-3.5 px-4 text-gray-500 max-w-xs">
+                  <span class="truncate block text-xs" :title="agenda.notes || '-'">{{ agenda.notes || '-' }}</span>
+                  <span
+                    v-if="agenda.absent_students && agenda.absent_students.length > 0"
+                    class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                    :title="'Cabut/Tidak di kelas: ' + agenda.absent_students.map(s => s.name).join(', ')"
+                  >
+                    <AlertCircle class="w-3 h-3 text-rose-600 shrink-0" />
+                    <span>{{ agenda.absent_students.length }} Siswa Cabut</span>
+                  </span>
                 </td>
 
                 <td class="py-3.5 px-4 text-center whitespace-nowrap">
@@ -471,6 +492,74 @@
               />
             </div>
 
+            <!-- Fitur Siswa Tidak Berada di Jam Ini (Cabut / Tidak Mengikuti KBM) -->
+            <div class="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-2.5 text-xs">
+              <div class="flex items-center justify-between">
+                <label class="font-bold text-amber-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <AlertCircle class="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>Siswa Tidak Berada di Jam Ini (Cabut)</span>
+                </label>
+                <span class="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full">
+                  {{ selectedAbsentStudents.length }} Siswa Ditandai
+                </span>
+              </div>
+              <p class="text-[11px] text-amber-800 leading-relaxed">
+                Tandai siswa yang tidak berada di kelas khusus pada jam pelajaran ini saja. Data disimpan di log agenda KBM tanpa mengubah presensi harian siswa yang pagi.
+              </p>
+
+              <!-- Search Siswa di Kelas Ini -->
+              <div class="relative">
+                <Search class="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  v-model="searchStudentQuery"
+                  type="text"
+                  placeholder="Cari nama siswa di kelas ini..."
+                  class="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <!-- List Siswa Checklist -->
+              <div class="max-h-36 overflow-y-auto divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 p-1">
+                <label
+                  v-for="std in filteredClassStudents"
+                  :key="std.id"
+                  class="flex items-center justify-between p-2 rounded-lg hover:bg-amber-50/50 cursor-pointer"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <input
+                      type="checkbox"
+                      :checked="isStudentAbsent(std.id)"
+                      @change="toggleAbsentStudent(std)"
+                      class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 shrink-0 cursor-pointer"
+                    />
+                    <span class="font-semibold text-gray-800 truncate">{{ std.name }}</span>
+                  </div>
+                  <span class="text-[10px] text-gray-400 font-mono shrink-0 ml-2">NIS: {{ std.nis }}</span>
+                </label>
+                <div v-if="filteredClassStudents.length === 0" class="p-3 text-center text-xs text-gray-400">
+                  {{ classStudents.length === 0 ? 'Memuat daftar siswa kelas...' : 'Tidak ada siswa yang cocok.' }}
+                </div>
+              </div>
+
+              <!-- Tagged Absent Students -->
+              <div v-if="selectedAbsentStudents.length > 0" class="flex flex-wrap gap-1.5 pt-1">
+                <span
+                  v-for="std in selectedAbsentStudents"
+                  :key="std.id"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold"
+                >
+                  <span>{{ std.name }}</span>
+                  <button
+                    type="button"
+                    @click="toggleAbsentStudent(std)"
+                    class="text-rose-500 hover:text-rose-800 cursor-pointer"
+                  >
+                    <X class="w-3 h-3" />
+                  </button>
+                </span>
+              </div>
+            </div>
+
             <div class="pt-2 flex items-center justify-end gap-3 border-t border-gray-100">
               <button
                 type="button"
@@ -508,6 +597,7 @@ import {
   FileSpreadsheet,
   Check,
   Trash2,
+  AlertCircle,
 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useToastStore } from '~/stores/toast'
@@ -527,6 +617,43 @@ const showAddModal = ref(false)
 const availableClasses = ref<any[]>([])
 const schedules = ref<any[]>([])
 const agendaList = ref<any[]>([])
+const classStudents = ref<any[]>([])
+const selectedAbsentStudents = ref<any[]>([])
+const searchStudentQuery = ref('')
+
+const filteredClassStudents = computed(() => {
+  if (!searchStudentQuery.value) return classStudents.value
+  const q = searchStudentQuery.value.toLowerCase()
+  return classStudents.value.filter(s => s.name?.toLowerCase().includes(q) || s.nis?.includes(q))
+})
+
+const fetchClassStudents = async (classId: string | number) => {
+  try {
+    const res: any = await $fetch(`${authStore.apiBase}/classes/${classId}/students`, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    })
+    classStudents.value = res || []
+  } catch (e) {
+    classStudents.value = []
+  }
+}
+
+const toggleAbsentStudent = (student: any) => {
+  const idx = selectedAbsentStudents.value.findIndex(s => s.id === student.id)
+  if (idx >= 0) {
+    selectedAbsentStudents.value.splice(idx, 1)
+  } else {
+    selectedAbsentStudents.value.push({
+      id: student.id,
+      name: student.name,
+      nis: student.nis
+    })
+  }
+}
+
+const isStudentAbsent = (studentId: any) => {
+  return selectedAbsentStudents.value.some(s => s.id === studentId)
+}
 
 const agendaForm = reactive({
   schedule_id: '' as string | number,
@@ -656,12 +783,15 @@ const onClassChange = () => {
   fetchAgendaJournals()
 }
 
-const openAddModal = () => {
+const openAddModal = async () => {
   agendaForm.date = filterDate.value || getLocalTodayYMD()
   if (schedules.value.length > 0 && !agendaForm.schedule_id) {
     agendaForm.schedule_id = schedules.value[0].id
   }
+  selectedAbsentStudents.value = []
+  searchStudentQuery.value = ''
   showAddModal.value = true
+  await fetchClassStudents(selectedClassId.value)
 }
 
 const submitAgenda = async () => {
@@ -681,7 +811,8 @@ const submitAgenda = async () => {
         date: agendaForm.date,
         topic: agendaForm.topic,
         activity: agendaForm.activity,
-        notes: agendaForm.notes
+        notes: agendaForm.notes,
+        absent_students: selectedAbsentStudents.value
       }
     })
     successMsg.value = res?.message || 'Agenda KBM kelas berhasil dicatat!'
@@ -689,6 +820,7 @@ const submitAgenda = async () => {
     agendaForm.topic = ''
     agendaForm.activity = ''
     agendaForm.notes = ''
+    selectedAbsentStudents.value = []
     await fetchAgendaJournals()
   } catch (err: any) {
     toast.error(err?.data?.message || 'Gagal menyimpan agenda KBM.')
@@ -754,6 +886,9 @@ const exportCsv = () => {
 }
 
 onMounted(async () => {
+  if (authStore.user?.role === 'GURU_PENGAJAR') {
+    return navigateTo('/jurnal-materi?tab=monitoring')
+  }
   await fetchClasses()
   await fetchSchedules()
   await fetchAgendaJournals()

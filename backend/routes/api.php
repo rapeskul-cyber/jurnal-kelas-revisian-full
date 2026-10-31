@@ -63,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/semester-recap', [AttendanceController::class, 'semesterRecap']);
 
     // Journals (Jurnal Kegiatan Siswa/Kelas & Jurnal Materi Guru)
+    Route::get('/classes/{classId}/students', [JournalController::class, 'getClassStudents']);
     Route::get('/journals/class', [JournalController::class, 'getClassJournals']);
     Route::post('/journals/class', [JournalController::class, 'storeClassJournal']);
     Route::put('/journals/class/{id}', [JournalController::class, 'updateClassJournal']);

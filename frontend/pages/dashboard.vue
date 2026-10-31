@@ -133,6 +133,103 @@
           <StatCard title="Alpha / Tanpa Kabar" :value="data?.stats?.alpha_hari ?? '0 Hari'" subtext="Tanpa Keterangan" color="blue" />
         </div>
 
+        <!-- Widget Timeline Materi Belajar Hari Ini -->
+        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-1.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-blue-50 text-primary flex items-center justify-center shrink-0">
+                <Clock class="w-4 h-4" />
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-bold text-gray-900">Timeline Materi Belajar Hari Ini</h3>
+                <p class="text-[11px] text-gray-500">Urutan sesi jam pelajaran, topik materi yang diajarkan, dan status terlaksana</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-primary bg-blue-50 px-3 py-1 rounded-full self-start sm:self-auto border border-blue-200">
+              {{ data?.today_attendance?.date_formatted || 'Hari Ini' }}
+            </span>
+          </div>
+
+          <!-- Timeline Items -->
+          <div v-if="data?.today_timeline && data.today_timeline.length > 0" class="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
+            <div
+              v-for="(item, idx) in data.today_timeline"
+              :key="idx"
+              class="relative"
+            >
+              <!-- Timeline Node Dot -->
+              <div
+                class="absolute -left-6 sm:-left-8 top-2 w-3.5 h-3.5 rounded-full border-2 border-white ring-2 transition"
+                :class="item.status === 'TERLAKSANA' ? 'bg-emerald-500 ring-emerald-200' : item.status === 'MENUNGGU_VERIFIKASI' ? 'bg-primary ring-blue-200' : 'bg-gray-300 ring-gray-150'"
+              ></div>
+
+              <div class="p-3.5 sm:p-4 rounded-xl border border-gray-150 bg-gray-50/50 hover:bg-white hover:shadow-xs transition space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                      {{ item.jam_ke }}
+                    </span>
+                    <span class="text-xs font-mono font-semibold text-gray-700">
+                      {{ item.time }}
+                    </span>
+                    <span class="text-[11px] text-gray-400">
+                      • {{ item.room }}
+                    </span>
+                  </div>
+
+                  <!-- Status Terlaksana Badge -->
+                  <span
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0"
+                    :class="item.status === 'TERLAKSANA' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : item.status === 'MENUNGGU_VERIFIKASI' ? 'bg-blue-50 text-primary border border-blue-200' : 'bg-gray-100 text-gray-600 border border-gray-200'"
+                  >
+                    <CheckCircle2 v-if="item.status === 'TERLAKSANA'" class="w-3 h-3 text-emerald-600" />
+                    <Clock v-else class="w-3 h-3 text-gray-400" />
+                    <span>{{ item.status_label }}</span>
+                  </span>
+                </div>
+
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-gray-900">{{ item.subject }}</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Guru Pengajar: <strong class="text-gray-700 font-medium">{{ item.teacher_name }}</strong>
+                  </p>
+                </div>
+
+                <!-- Materi / Pokok Bahasan -->
+                <div class="p-2.5 rounded-lg bg-white border border-gray-150 text-xs">
+                  <span class="font-semibold text-gray-500 text-[10px] uppercase block tracking-wider mb-0.5">Materi / Topik KBM:</span>
+                  <p class="text-gray-800 font-medium leading-relaxed">
+                    {{ item.topic }}
+                  </p>
+                  <p v-if="item.notes" class="text-[11px] text-gray-500 italic mt-1 pt-1 border-t border-gray-100">
+                    Catatan: {{ item.notes }}
+                  </p>
+                </div>
+
+                <!-- Alert Siswa Tidak Berada di Jam Ini jika ada -->
+                <div v-if="item.absent_students && item.absent_students.length > 0" class="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px] space-y-0.5">
+                  <span class="font-bold flex items-center gap-1">
+                    <AlertCircle class="w-3 h-3 text-rose-600" />
+                    Siswa tidak berada di kelas pada jam ini ({{ item.absent_students.length }} siswa):
+                  </span>
+                  <p class="text-rose-700">
+                    {{ item.absent_students.map((s: any) => s.name).join(', ') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-8 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 space-y-1.5">
+            <div class="w-8 h-8 rounded-full bg-blue-50 text-primary mx-auto flex items-center justify-center">
+              <Calendar class="w-4 h-4" />
+            </div>
+            <p class="text-xs font-bold text-gray-700">Tidak Ada Sesi KBM Terjadwal Hari Ini</p>
+            <p class="text-[11px] text-gray-400">Jadwal pembelajaran untuk hari ini kosong atau sedang masa jeda KBM.</p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Riwayat Kehadiran Terakhir -->
           <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs">
@@ -435,6 +532,103 @@
           <StatCard title="Sakit" :value="data?.stats?.sakit_hari ?? '0 Hari'" subtext="Disertai Surat" color="blue" />
           <StatCard title="Izin Disetujui" :value="data?.stats?.izin_hari ?? '0 Hari'" subtext="Disetujui Wali Kelas" color="blue" />
           <StatCard title="Alpha" :value="data?.stats?.alpha_hari ?? '0 Hari'" subtext="Tanpa Keterangan" color="blue" />
+        </div>
+
+        <!-- Widget Timeline Materi Belajar Anak Hari Ini (Untuk Orang Tua) -->
+        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-1.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-blue-50 text-primary flex items-center justify-center shrink-0">
+                <Clock class="w-4 h-4" />
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-bold text-gray-900">Timeline Materi Belajar Anak Hari Ini</h3>
+                <p class="text-[11px] text-gray-500">Urutan jam pelajaran, materi yang dipelajari putra/putri Anda, dan status keterlaksanaannya</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-primary bg-blue-50 px-3 py-1 rounded-full self-start sm:self-auto border border-blue-200">
+              {{ data?.child?.date_formatted || 'Hari Ini' }}
+            </span>
+          </div>
+
+          <!-- Timeline Items -->
+          <div v-if="data?.today_timeline && data.today_timeline.length > 0" class="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
+            <div
+              v-for="(item, idx) in data.today_timeline"
+              :key="idx"
+              class="relative"
+            >
+              <!-- Timeline Node Dot -->
+              <div
+                class="absolute -left-6 sm:-left-8 top-2 w-3.5 h-3.5 rounded-full border-2 border-white ring-2 transition"
+                :class="item.status === 'TERLAKSANA' ? 'bg-emerald-500 ring-emerald-200' : item.status === 'MENUNGGU_VERIFIKASI' ? 'bg-primary ring-blue-200' : 'bg-gray-300 ring-gray-150'"
+              ></div>
+
+              <div class="p-3.5 sm:p-4 rounded-xl border border-gray-150 bg-gray-50/50 hover:bg-white hover:shadow-xs transition space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                      {{ item.jam_ke }}
+                    </span>
+                    <span class="text-xs font-mono font-semibold text-gray-700">
+                      {{ item.time }}
+                    </span>
+                    <span class="text-[11px] text-gray-400">
+                      • {{ item.room }}
+                    </span>
+                  </div>
+
+                  <!-- Status Terlaksana Badge -->
+                  <span
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0"
+                    :class="item.status === 'TERLAKSANA' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : item.status === 'MENUNGGU_VERIFIKASI' ? 'bg-blue-50 text-primary border border-blue-200' : 'bg-gray-100 text-gray-600 border border-gray-200'"
+                  >
+                    <CheckCircle2 v-if="item.status === 'TERLAKSANA'" class="w-3 h-3 text-emerald-600" />
+                    <Clock v-else class="w-3 h-3 text-gray-400" />
+                    <span>{{ item.status_label }}</span>
+                  </span>
+                </div>
+
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-gray-900">{{ item.subject }}</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Guru Pengajar: <strong class="text-gray-700 font-medium">{{ item.teacher_name }}</strong>
+                  </p>
+                </div>
+
+                <!-- Materi / Pokok Bahasan -->
+                <div class="p-2.5 rounded-lg bg-white border border-gray-150 text-xs">
+                  <span class="font-semibold text-gray-500 text-[10px] uppercase block tracking-wider mb-0.5">Materi / Topik KBM:</span>
+                  <p class="text-gray-800 font-medium leading-relaxed">
+                    {{ item.topic }}
+                  </p>
+                  <p v-if="item.notes" class="text-[11px] text-gray-500 italic mt-1 pt-1 border-t border-gray-100">
+                    Catatan Kelas: {{ item.notes }}
+                  </p>
+                </div>
+
+                <!-- Alert Siswa Tidak Berada di Jam Ini jika ada -->
+                <div v-if="item.absent_students && item.absent_students.length > 0" class="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px] space-y-0.5">
+                  <span class="font-bold flex items-center gap-1">
+                    <AlertCircle class="w-3 h-3 text-rose-600" />
+                    Siswa tidak berada di kelas pada jam ini ({{ item.absent_students.length }} siswa):
+                  </span>
+                  <p class="text-rose-700">
+                    {{ item.absent_students.map((s: any) => s.name).join(', ') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-8 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 space-y-1.5">
+            <div class="w-8 h-8 rounded-full bg-blue-50 text-primary mx-auto flex items-center justify-center">
+              <Calendar class="w-4 h-4" />
+            </div>
+            <p class="text-xs font-bold text-gray-700">Tidak Ada Sesi KBM Terjadwal Hari Ini</p>
+            <p class="text-[11px] text-gray-400">Jadwal pembelajaran untuk hari ini kosong atau sedang masa jeda KBM.</p>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1176,6 +1370,8 @@ import {
   XCircle,
   Mail,
   FileText,
+  Calendar,
+  AlertCircle,
 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useToastStore } from '~/stores/toast'

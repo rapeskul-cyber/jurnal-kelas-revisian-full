@@ -90,9 +90,7 @@
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span class="text-3xl font-extrabold text-green-600">{{ avgAttendance }}</span>
-          <span class="text-xs px-2 py-0.5 rounded-full font-semibold" :class="predicateBadgeClass">
-            {{ predicate }}
-          </span>
+          <span class="text-xs text-gray-500 font-medium">Kehadiran Kelas</span>
         </div>
         <p class="text-[11px] text-gray-400 mt-1">{{ targetNote }}</p>
       </div>
@@ -265,13 +263,8 @@
               <span class="text-[11px] text-gray-500 font-mono">NIS: {{ st.nis }}</span>
             </div>
             <div class="text-right">
-              <span class="text-sm font-bold text-gray-900">{{ st.percentage }}</span>
-              <span
-                class="block px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5"
-                :class="parseFloat(st.percentage) >= 90 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : parseFloat(st.percentage) >= 75 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
-              >
-                {{ parseFloat(st.percentage) >= 90 ? 'Sangat Baik' : parseFloat(st.percentage) >= 75 ? 'Cukup' : 'Perlu Perhatian' }}
-              </span>
+              <span class="text-base font-extrabold text-gray-900">{{ st.percentage }}</span>
+              <span class="text-[11px] text-gray-400 block font-medium">Kehadiran</span>
             </div>
           </div>
 
@@ -313,7 +306,6 @@
               <th class="py-3 px-4 text-center text-blue-700 whitespace-nowrap">Izin</th>
               <th class="py-3 px-4 text-center text-rose-700 whitespace-nowrap">ALFA</th>
               <th class="py-3 px-4 text-center whitespace-nowrap">Persentase</th>
-              <th class="py-3 px-4 text-center whitespace-nowrap">Predikat</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -334,17 +326,9 @@
               <td class="py-3 px-4 text-center whitespace-nowrap">
                 <span class="font-bold text-gray-900">{{ st.percentage }}</span>
               </td>
-              <td class="py-3 px-4 text-center whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
-                  :class="parseFloat(st.percentage) >= 90 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : parseFloat(st.percentage) >= 75 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
-                >
-                  {{ parseFloat(st.percentage) >= 90 ? 'Sangat Baik' : parseFloat(st.percentage) >= 75 ? 'Cukup' : 'Perlu Perhatian' }}
-                </span>
-              </td>
             </tr>
             <tr v-if="filteredStudents.length === 0">
-              <td colspan="9" class="py-12 text-center text-gray-400 text-sm">
+              <td colspan="8" class="py-12 text-center text-gray-400 text-sm">
                 Tidak ada siswa yang cocok dengan pencarian.
               </td>
             </tr>
@@ -450,7 +434,7 @@ const exportExcel = () => {
     return
   }
 
-  const headers = ['No', 'Nama Siswa', 'NIS / NISN', 'Hadir', 'Sakit', 'Izin', 'ALFA', 'Persentase', 'Predikat']
+  const headers = ['No', 'Nama Siswa', 'NIS / NISN', 'Hadir', 'Sakit', 'Izin', 'ALFA', 'Persentase']
   const rows = filteredStudents.value.map((s, idx) => [
     idx + 1,
     `"${s.name}"`,
@@ -459,8 +443,7 @@ const exportExcel = () => {
     s.sakit,
     s.izin,
     s.alpha,
-    `"${s.percentage}"`,
-    `"${parseFloat(s.percentage) >= 90 ? 'Sangat Baik' : parseFloat(s.percentage) >= 75 ? 'Cukup' : 'Perlu Perhatian'}"`
+    `"${s.percentage}"`
   ])
 
   const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
