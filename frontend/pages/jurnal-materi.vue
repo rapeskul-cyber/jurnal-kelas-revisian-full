@@ -87,7 +87,15 @@
               <h2 class="text-sm sm:text-base font-bold text-gray-900 tracking-tight leading-snug">Jadwal Mengajar & Status Jurnal</h2>
               <p class="text-[11px] text-gray-400 mt-0.5">Daftar kelas aktif, input materi sesi, dan verifikasi KBM</p>
             </div>
-            <div class="flex items-center gap-2 self-start sm:self-auto">
+            <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <button
+                type="button"
+                @click="openUploadMaterialModal = true"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary bg-primary text-white hover:bg-primary-hover text-xs font-semibold shadow-2xs transition cursor-pointer whitespace-nowrap active:scale-95"
+              >
+                <UploadCloudIcon class="w-3.5 h-3.5" />
+                <span>Unggah Modul Belajar</span>
+              </button>
               <button
                 type="button"
                 @click="openAddScheduleModal = true"
@@ -879,6 +887,132 @@
         </form>
       </div>
     </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL 4: UNGGAH MATERI & MODUL BELAJAR GURU   -->
+    <!-- ============================================== -->
+    <div
+      v-if="openUploadMaterialModal"
+      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs"
+    >
+      <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pb-8 sm:pb-7 pb-safe">
+        <!-- Mobile drag handle -->
+        <div class="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto -mt-2 mb-3"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-primary uppercase tracking-wider">
+              Modul Digital
+            </span>
+            <h3 class="text-base font-bold text-gray-900 mt-1">Unggah Materi & Modul Belajar</h3>
+            <p class="text-xs text-gray-400">Berkas dapat diakses dan diunduh langsung oleh siswa di kelas.</p>
+          </div>
+          <button @click="openUploadMaterialModal = false" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">
+            <XIcon class="w-4 h-4" />
+          </button>
+        </div>
+
+        <form @submit.prevent="submitUploadMaterial" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Pilih Kelas & Mapel Tujuan *</label>
+            <select
+              v-model="uploadMaterialForm.schedule_id"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
+              required
+            >
+              <option value="" disabled>-- Pilih Jadwal & Kelas --</option>
+              <option v-for="sch in allTeacherSchedules" :key="sch.id" :value="sch.id">
+                {{ sch.school_class?.name || sch.class_name }} — {{ sch.subject?.name || sch.subject_name }} ({{ sch.day }}, {{ sch.start_time }}-{{ sch.end_time }})
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Pokok Bahasan / Topik KD *</label>
+            <input
+              v-model="uploadMaterialForm.topic"
+              type="text"
+              placeholder="Contoh: Modul Praktikum REST API & Vue 3"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Instruksi Tugas / Catatan Tambahan</label>
+            <textarea
+              v-model="uploadMaterialForm.assignment"
+              rows="2"
+              placeholder="Contoh: Baca materi bab 2 dan kerjakan latihan mandiri..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+            ></textarea>
+          </div>
+
+          <!-- File Dropzone -->
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Berkas Dokumen Materi (PDF, DOCX, PPTX, JPG)</label>
+            <div
+              @dragover.prevent="isDraggingUpload = true"
+              @dragleave.prevent="isDraggingUpload = false"
+              @drop.prevent="handleUploadFileDrop"
+              class="border-2 border-dashed rounded-2xl p-4 text-center transition cursor-pointer"
+              :class="isDraggingUpload ? 'border-primary bg-blue-50/50' : 'border-gray-200 hover:border-gray-300 bg-gray-50/40'"
+              @click="triggerUploadFileInput"
+            >
+              <input
+                ref="uploadFileInputRef"
+                type="file"
+                class="hidden"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
+                @change="handleUploadFileSelect"
+              />
+
+              <div v-if="!uploadSelectedFile" class="space-y-1 py-1">
+                <div class="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center mx-auto">
+                  <UploadCloudIcon class="w-4 h-4" />
+                </div>
+                <p class="text-xs font-semibold text-primary">Klik untuk Pilih File atau Tarik ke Sini</p>
+                <p class="text-[10px] text-gray-400">Format PDF, DOCX, PPTX, JPG (Maks 10MB)</p>
+              </div>
+
+              <div v-else class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-200 text-left">
+                <div class="flex items-center gap-2 min-w-0">
+                  <FileTextIcon class="w-5 h-5 text-primary shrink-0" />
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-gray-800 truncate">{{ uploadSelectedFile.name }}</p>
+                    <p class="text-[10px] text-gray-400">{{ (uploadSelectedFile.size / 1024).toFixed(1) }} KB</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click.stop="removeUploadFile"
+                  class="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                >
+                  <XIcon class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              @click="openUploadMaterialModal = false"
+              class="px-4 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="uploadingMaterial"
+              class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <UploadCloudIcon class="w-3.5 h-3.5" />
+              <span>{{ uploadingMaterial ? 'Mengunggah...' : 'Publikasikan ke Siswa' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -897,6 +1031,8 @@ import {
   Calendar as CalendarIcon,
   BarChart2 as BarChart2Icon,
   Search as SearchIcon,
+  UploadCloud as UploadCloudIcon,
+  Download as DownloadIcon,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -940,6 +1076,72 @@ const taughtClassesList = computed(() => {
 })
 
 const openAddScheduleModal = ref(false)
+const openUploadMaterialModal = ref(false)
+const uploadingMaterial = ref(false)
+const isDraggingUpload = ref(false)
+const uploadSelectedFile = ref<File | null>(null)
+const uploadFileInputRef = ref<HTMLInputElement | null>(null)
+const uploadMaterialForm = ref({
+  schedule_id: '',
+  topic: '',
+  assignment: ''
+})
+
+const triggerUploadFileInput = () => {
+  uploadFileInputRef.value?.click()
+}
+
+const handleUploadFileSelect = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    uploadSelectedFile.value = target.files[0]
+  }
+}
+
+const handleUploadFileDrop = (e: DragEvent) => {
+  isDraggingUpload.value = false
+  if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    uploadSelectedFile.value = e.dataTransfer.files[0]
+  }
+}
+
+const removeUploadFile = () => {
+  uploadSelectedFile.value = null
+  if (uploadFileInputRef.value) uploadFileInputRef.value.value = ''
+}
+
+const submitUploadMaterial = async () => {
+  if (!uploadMaterialForm.value.schedule_id || !uploadMaterialForm.value.topic) return
+  uploadingMaterial.value = true
+  try {
+    const formData = new FormData()
+    formData.append('schedule_id', uploadMaterialForm.value.schedule_id)
+    formData.append('topic', uploadMaterialForm.value.topic)
+    formData.append('plan', uploadMaterialForm.value.topic)
+    formData.append('assignment', uploadMaterialForm.value.assignment || '')
+    if (uploadSelectedFile.value) {
+      formData.append('file', uploadSelectedFile.value)
+    }
+
+    await $fetch(`${config.public.apiBase}/journals/material`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authStore.token}` },
+      body: formData
+    })
+
+    successMsg.value = `Modul & bahan ajar '${uploadMaterialForm.value.topic}' berhasil diunggah dan dapat diunduh siswa!`
+    openUploadMaterialModal.value = false
+    uploadMaterialForm.value = { schedule_id: '', topic: '', assignment: '' }
+    uploadSelectedFile.value = null
+    if (uploadFileInputRef.value) uploadFileInputRef.value.value = ''
+    fetchTeacherSchedulesAndJournals()
+  } catch (err: any) {
+    console.error('Error uploading material:', err)
+    alert(err?.data?.message || 'Gagal mengunggah materi.')
+  } finally {
+    uploadingMaterial.value = false
+  }
+}
 const newScheduleForm = ref({
   class_id: '',
   subject_name: '',

@@ -437,7 +437,18 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('schedule_id');
 
-        return $schedules->values()->map(function ($sch, $index) use ($todayJournals) {
+        $todayMaterialsBySchedule = MaterialJournal::where('class_id', $classId)
+            ->whereNotNull('schedule_id')
+            ->latest('id')
+            ->get()
+            ->keyBy('schedule_id');
+
+        $todayMaterialsBySubject = MaterialJournal::where('class_id', $classId)
+            ->latest('id')
+            ->get()
+            ->keyBy('subject_id');
+
+        return $schedules->values()->map(function ($sch, $index) use ($todayJournals, $todayMaterialsBySchedule, $todayMaterialsBySubject) {
             $journal = $todayJournals->get($sch->id);
             $absentStudents = [];
             $notes = $journal?->notes;
@@ -447,6 +458,14 @@ class DashboardController extends Controller
                     $absentStudents = $dec['absent_students'] ?? [];
                     $notes = $dec['notes'] ?? '';
                 }
+            }
+
+            $mat = $todayMaterialsBySchedule->get($sch->id) ?? $todayMaterialsBySubject->get($sch->subject_id);
+            $attachmentUrl = null;
+            $attachmentName = null;
+            if ($mat && $mat->attachment_path) {
+                $attachmentUrl = url('api/materials/file/' . basename($mat->attachment_path));
+                $attachmentName = basename($mat->attachment_path);
             }
 
             $isDone = $journal && $journal->verification_status === 'TERVERIFIKASI';
@@ -459,9 +478,11 @@ class DashboardController extends Controller
                 'subject' => $sch->subject->name ?? 'Mata Pelajaran',
                 'subject_code' => $sch->subject->code ?? '',
                 'teacher_name' => $sch->teacher->name ?? 'Guru Pengajar',
-                'topic' => $journal?->activity ?? 'Menunggu KBM dimulai',
-                'notes' => $notes,
+                'topic' => $journal?->activity ?? ($mat?->topic ?? 'Menunggu KBM dimulai'),
+                'notes' => $notes ?: ($mat?->assignment ?? ''),
                 'absent_students' => $absentStudents,
+                'attachment_url' => $attachmentUrl,
+                'attachment_name' => $attachmentName,
                 'status' => $isDone ? 'TERLAKSANA' : ($isPending ? 'MENUNGGU_VERIFIKASI' : 'BELUM_DIMULAI'),
                 'status_label' => $isDone ? 'Terlaksana & Terverifikasi' : ($isPending ? 'Selesai (Menunggu Paraf)' : 'Belum Dimulai'),
                 'status_color' => $isDone ? 'emerald' : ($isPending ? 'blue' : 'gray'),

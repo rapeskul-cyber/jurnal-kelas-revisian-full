@@ -204,6 +204,19 @@
                   <p v-if="item.notes" class="text-[11px] text-gray-500 italic mt-1 pt-1 border-t border-gray-100">
                     Catatan: {{ item.notes }}
                   </p>
+
+                  <!-- Direct Download Modul Pembelajaran jika ada file -->
+                  <div v-if="item.attachment_url" class="pt-2 mt-1.5 border-t border-gray-100">
+                    <a
+                      :href="item.attachment_url"
+                      target="_blank"
+                      :download="item.attachment_name || 'Modul_Belajar.pdf'"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Download class="w-3.5 h-3.5 shrink-0" />
+                      <span>Unduh Modul / Lampiran ({{ item.attachment_name || 'Berkas' }})</span>
+                    </a>
+                  </div>
                 </div>
 
                 <!-- Alert Siswa Tidak Berada di Jam Ini jika ada -->
@@ -605,6 +618,19 @@
                   <p v-if="item.notes" class="text-[11px] text-gray-500 italic mt-1 pt-1 border-t border-gray-100">
                     Catatan Kelas: {{ item.notes }}
                   </p>
+
+                  <!-- Direct Download Modul Pembelajaran jika ada file -->
+                  <div v-if="item.attachment_url" class="pt-2 mt-1.5 border-t border-gray-100">
+                    <a
+                      :href="item.attachment_url"
+                      target="_blank"
+                      :download="item.attachment_name || 'Modul_Belajar.pdf'"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Download class="w-3.5 h-3.5 shrink-0" />
+                      <span>Unduh Modul / Materi ({{ item.attachment_name || 'Berkas' }})</span>
+                    </a>
+                  </div>
                 </div>
 
                 <!-- Alert Siswa Tidak Berada di Jam Ini jika ada -->
@@ -1372,6 +1398,7 @@ import {
   FileText,
   Calendar,
   AlertCircle,
+  Download,
 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useToastStore } from '~/stores/toast'
