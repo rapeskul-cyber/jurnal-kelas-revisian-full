@@ -35,6 +35,7 @@ export const ROLE_MENUS: Record<string, MenuItem[]> = {
     { name: 'Agenda KBM Kelas', to: '/jurnal-kelas', icon: 'FileText' },
     { name: 'Laporan Jurnal', to: '/laporan-jurnal', icon: 'FolderOpen' },
     { name: 'Rekap Otomatis', to: '/rekap-semester', icon: 'BarChart2' },
+    { name: 'Koreksi Presensi (Override)', to: '/presensi-override', icon: 'ShieldAlert' },
   ],
   ORANG_TUA: [
     { name: 'Pantauan Anak', to: '/dashboard', icon: 'Home' },

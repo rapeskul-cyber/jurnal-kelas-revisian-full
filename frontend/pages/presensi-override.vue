@@ -1,8 +1,8 @@
 <template>
   <div class="flex-1 flex flex-col">
     <AppHeader
-      title="Kontrol Presensi & Override Sesi"
-      subtitle="Buka kunci sesi presensi terkunci untuk koreksi data dan pantau kehadiran harian seluruh kelas"
+      :title="authStore.user?.role === 'GURU_PEMBIMBING' ? 'Kontrol & Koreksi Presensi Kelas Binaan' : 'Kontrol Presensi & Override Sesi'"
+      :subtitle="authStore.user?.role === 'GURU_PEMBIMBING' ? 'Buka kunci sesi (Force Unlock) untuk mengoreksi presensi kelas binaan Anda, perbaiki data di halaman presensi, lalu kunci kembali.' : 'Buka kunci sesi presensi terkunci untuk koreksi data dan pantau kehadiran harian seluruh kelas'"
     />
 
     <main class="px-6 md:px-8 pb-10 space-y-6">
@@ -270,7 +270,11 @@ async function fetchMonitoring() {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     if (res && res.classes_monitoring) {
-      monitoringList.value = res.classes_monitoring
+      if (authStore.user?.role === 'GURU_PEMBIMBING' && authStore.user?.class_id) {
+        monitoringList.value = res.classes_monitoring.filter((c: any) => c.id === authStore.user?.class_id)
+      } else {
+        monitoringList.value = res.classes_monitoring
+      }
     }
   } catch (e: any) {
     errorMsg.value = e?.data?.message || 'Gagal memuat monitoring sesi presensi.'
@@ -282,7 +286,7 @@ async function fetchMonitoring() {
 async function triggerForceUnlock(item: any) {
   const ok = await confirmDialog({
     title: 'Buka Paksa Sesi Presensi?',
-    message: `Buka paksa (Force Unlock) sesi presensi kelas ${item.class_name} untuk tanggal ${selectedDate.value}?\nSesi akan dikembalikan menjadi DRAFT dan dapat diedit oleh sekretaris.`,
+    message: `Buka paksa (Force Unlock) sesi presensi kelas ${item.class_name} untuk tanggal ${selectedDate.value}?\nSesi akan dikembalikan menjadi DRAFT dan dapat diedit kembali untuk koreksi kehadiran.`,
     confirmText: 'Buka Paksa Sesi',
     cancelText: 'Batal',
     type: 'warning',

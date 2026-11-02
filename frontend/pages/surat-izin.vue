@@ -68,6 +68,51 @@
               </div>
             </div>
 
+            
+            <!-- Pilihan Pemohon Khusus Sekretaris Kelas -->
+            <div v-if="authStore.user?.role === 'SEKRETARIS'" class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+              <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                Pengajuan Izin Atas Nama *
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  @click="targetApplicant = 'SELF'; selectedClassmateId = null"
+                  :class="[
+                    'py-2 px-3 rounded-xl text-xs font-semibold border transition text-center cursor-pointer',
+                    targetApplicant === 'SELF' ? 'bg-white border-primary text-primary font-bold shadow-2xs' : 'bg-white/60 border-gray-200 text-gray-600'
+                  ]"
+                >
+                  Diri Sendiri (Sekretaris)
+                </button>
+                <button
+                  type="button"
+                  @click="targetApplicant = 'CLASSMATE'"
+                  :class="[
+                    'py-2 px-3 rounded-xl text-xs font-semibold border transition text-center cursor-pointer',
+                    targetApplicant === 'CLASSMATE' ? 'bg-white border-primary text-primary font-bold shadow-2xs' : 'bg-white/60 border-gray-200 text-gray-600'
+                  ]"
+                >
+                  Siswa Lain di Kelas
+                </button>
+              </div>
+
+              <!-- Dropdown jika memilih siswa lain -->
+              <div v-if="targetApplicant === 'CLASSMATE'" class="pt-1.5">
+                <label class="block text-[10px] font-bold text-gray-600 mb-1">Pilih Siswa yang Berhalangan:</label>
+                <select
+                  v-model="selectedClassmateId"
+                  required
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                  <option :value="null" disabled>-- Pilih Teman Sekelas --</option>
+                  <option v-for="std in classStudents" :key="std.id" :value="std.id">
+                    {{ std.name }} (NIS: {{ std.nip_nis || '-' }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
             <!-- Jenis Izin -->
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
@@ -351,6 +396,23 @@ const loadingLeaves = ref(false)
 const submitting = ref(false)
 const successMsg = ref('')
 
+const targetApplicant = ref<'SELF' | 'CLASSMATE'>('SELF')
+const selectedClassmateId = ref<number | null>(null)
+const classStudents = ref<any[]>([])
+
+const fetchClassStudents = async () => {
+  if (authStore.user?.role !== 'SEKRETARIS') return
+  try {
+    const classId = authStore.user?.class_id || 1
+    const res: any = await $fetch(`${config.public.apiBase}/classes/${classId}/students`, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    })
+    classStudents.value = (res || []).filter((s: any) => s.id !== authStore.user?.id)
+  } catch (e) {
+    console.error('Error fetching class students:', e)
+  }
+}
+
 const form = ref({
   type: 'SAKIT',
   start_date: new Date().toISOString().slice(0, 10),
@@ -438,6 +500,7 @@ const handleSubmit = async () => {
     selectedFile.value = null
     if (fileInputRef.value) fileInputRef.value.value = ''
     await fetchLeaves()
+  fetchClassStudents()
   } catch (err: any) {
     toast.error(err?.data?.message || 'Gagal mengajukan surat izin')
   } finally {

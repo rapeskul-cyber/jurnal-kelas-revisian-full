@@ -752,185 +752,261 @@
       <!-- ROLE: SEKRETARIS (Rekap Kelas & Jurnal Kelas)  -->
       <!-- ============================================== -->
       <template v-else-if="authStore.user?.role === 'SEKRETARIS'">
-        <!-- Kartu Status Kehadiran Pribadi Sekretaris Sendiri (Dualisme Petugas & Siswa) -->
-        <div
-          :class="[
-            'bg-white rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4 border transition',
-            data?.self_attendance?.is_leave_rejected
-              ? 'border-rose-200'
-              : data?.self_attendance?.is_leave_approved
-              ? 'border-orange-200'
-              : data?.self_attendance?.has_pending_leave
-              ? 'border-amber-200'
-              : data?.self_attendance?.status === 'HADIR'
-              ? 'border-emerald-200'
-              : 'border-blue-150'
-          ]"
-        >
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div class="space-y-1.5 min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-primary border border-blue-200">
-                  Status Kehadiran Pribadi Anda (Sekretaris Kelas)
-                </span>
-                <span class="text-xs text-gray-500 font-medium">
-                  {{ data?.self_attendance?.date_formatted || 'Hari Ini' }}
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                <span class="text-xs font-semibold text-gray-700">Status Kehadiran Anda Hari Ini:</span>
-                <StatusBadge :status="data?.self_attendance?.status || 'BELUM_PRESENSI'" />
-                <span v-if="data?.self_attendance?.note" class="text-xs text-gray-500 break-words">— {{ data?.self_attendance?.note }}</span>
-              </div>
-            </div>
-
-            <!-- Quick Action Buttons for Secretary's Personal Attendance -->
-            <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
+        <!-- Selector Lingkup Aktivitas Sekretaris (Dualisme Siswa vs Pengurus Kelas Sesuai Bagan Alur) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-gray-150 shadow-2xs">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Lingkup Operasi:</span>
+            <div class="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
               <button
-                v-if="!data?.self_attendance?.checked_in && !data?.self_attendance?.is_leave_approved && !data?.self_attendance?.has_pending_leave && !data?.self_attendance?.is_leave_rejected"
                 type="button"
-                @click="handleSelfCheckIn"
-                :disabled="isCheckingIn"
-                class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
+                @click="secretaryTab = 'KELAS'"
+                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                :class="secretaryTab === 'KELAS' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-800'"
               >
-                <CheckCircle2 class="w-4 h-4" />
-                <span>{{ isCheckingIn ? 'Menyimpan...' : 'Presensi Hadir Mandiri' }}</span>
+                Fitur Kelas (Presensi & Agenda)
               </button>
-
-              <NuxtLink
-                to="/surat-izin"
-                class="px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto min-h-[44px]"
+              <button
+                type="button"
+                @click="secretaryTab = 'SISWA'"
+                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                :class="secretaryTab === 'SISWA' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-800'"
               >
-                <Mail class="w-3.5 h-3.5 text-primary" />
-                <span>Ajukan Izin Saya</span>
-              </NuxtLink>
-
-              <NuxtLink
-                to="/jurnal-pelajaran"
-                class="px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto min-h-[44px]"
-              >
-                <BookOpen class="w-3.5 h-3.5 text-primary" />
-                <span>Catatan Belajar Saya</span>
-              </NuxtLink>
+                Fitur Siswa (Belajar & Mandiri)
+              </button>
             </div>
           </div>
+          <span class="text-xs text-primary font-semibold bg-blue-50 px-3 py-1 rounded-full border border-blue-200 self-start sm:self-auto">
+            {{ secretaryTab === 'KELAS' ? 'Mode Pengurus Kelas Aktif' : 'Mode Belajar Siswa Aktif' }}
+          </span>
         </div>
 
-        <!-- 4 Stat Cards Hari Ini -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          <StatCard title="Hadir" :value="data?.stats?.hadir_count ?? '0 Siswa'" :subtext="data?.stats?.hadir_percent ?? '0% Kehadiran'" color="blue" />
-          <StatCard title="Izin" :value="data?.stats?.izin_count ?? '0 Siswa'" subtext="Disetujui Wali Kelas" color="blue" />
-          <StatCard title="Sakit" :value="data?.stats?.sakit_count ?? '0 Siswa'" subtext="Disetujui Wali Kelas" color="blue" />
-          <StatCard title="Alfa" :value="data?.stats?.alpha_count ?? '0 Siswa'" subtext="Tanpa Keterangan" color="blue" />
-        </div>
-
-        <!-- Presensi Kelas Hari Ini Table -->
-        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <h3 class="text-sm font-bold text-gray-900">Rekap Presensi Mandiri {{ data?.class_name || 'Kelas' }} Hari Ini</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Data terisi otomatis dari Presensi Mandiri Siswa & Surat Izin yang disetujui Wali Kelas</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <NuxtLink
-                to="/jurnal-kelas"
-                class="px-3 py-2 bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
-              >
-                <FileText class="w-3.5 h-3.5 text-primary" />
-                <span>Agenda KBM Kelas</span>
-              </NuxtLink>
-              <NuxtLink
-                to="/presensi"
-                class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
-              >
-                <ClipboardCheck class="w-4 h-4" />
-                <span>Presensi Kelas</span>
-              </NuxtLink>
-            </div>
+        <!-- ================= MODE KELAS ================= -->
+        <template v-if="secretaryTab === 'KELAS'">
+          <!-- 4 Stat Cards Hari Ini -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <StatCard title="Hadir" :value="data?.stats?.hadir_count ?? '0 Siswa'" :subtext="data?.stats?.hadir_percent ?? '0% Kehadiran'" color="blue" />
+            <StatCard title="Izin" :value="data?.stats?.izin_count ?? '0 Siswa'" subtext="Disetujui Wali Kelas" color="blue" />
+            <StatCard title="Sakit" :value="data?.stats?.sakit_count ?? '0 Siswa'" subtext="Disetujui Wali Kelas" color="blue" />
+            <StatCard title="Alfa" :value="data?.stats?.alpha_count ?? '0 Siswa'" subtext="Tanpa Keterangan" color="blue" />
           </div>
 
-          <!-- Mobile Card View -->
-          <div class="block md:hidden space-y-2.5">
-            <div
-              v-for="item in data?.attendance_list || []"
-              :key="item.student_id"
-              class="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div>
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="font-bold text-xs text-gray-900">{{ item.name }}</span>
-                    <span v-if="item.is_self" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                      Anda
-                    </span>
-                  </div>
-                  <span class="text-[11px] text-gray-400">NIS: {{ item.nis }}</span>
-                </div>
-                <StatusBadge :status="item.status" />
+          <!-- Presensi Kelas Hari Ini Table -->
+          <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-gray-900">Rekap Presensi Mandiri {{ data?.class_name || 'Kelas' }} Hari Ini</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Data terisi otomatis dari Presensi Mandiri Siswa & Surat Izin yang disetujui Wali Kelas</p>
               </div>
-
-              <div v-if="item.is_rejected_leave" class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 p-1.5 rounded-lg">
-                Izin Ditolak Walas: {{ item.rejection_reason || 'Wajib verifikasi fisik di kelas' }}
-              </div>
-
-              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-gray-100">
-                <span class="text-gray-500 truncate max-w-[200px]">{{ item.note || '-' }}</span>
-                <span v-if="item.verified" class="inline-flex items-center text-emerald-600 font-semibold gap-1 text-[11px]">
-                  <CheckCircle2 class="w-3.5 h-3.5" /> Terverifikasi
-                </span>
-                <span v-else class="text-gray-400 text-[11px]">-</span>
+              <div class="flex items-center gap-2">
+                <NuxtLink
+                  to="/jurnal-kelas"
+                  class="px-3 py-2 bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
+                >
+                  <FileText class="w-3.5 h-3.5 text-primary" />
+                  <span>Agenda KBM Kelas</span>
+                </NuxtLink>
+                <NuxtLink
+                  to="/presensi"
+                  class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
+                >
+                  <ClipboardCheck class="w-4 h-4" />
+                  <span>Presensi Kelas</span>
+                </NuxtLink>
               </div>
             </div>
-            <div v-if="!data?.attendance_list?.length" class="text-center py-6 text-gray-400 text-xs">
-              Belum ada data presensi kelas.
-            </div>
-          </div>
 
-          <!-- Desktop Table View -->
-          <div class="hidden md:block overflow-x-auto -mx-2 sm:mx-0">
-            <table class="w-full text-left text-xs min-w-[550px]">
-              <thead>
-                <tr class="text-gray-400 uppercase text-[10px] border-b border-gray-100 font-bold">
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap w-10">No</th>
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap">Nama Siswa</th>
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap">NIS</th>
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap text-center">Status Presensi</th>
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap">Keterangan</th>
-                  <th class="pb-3 px-2 font-semibold whitespace-nowrap text-right">Verifikasi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50">
-                <tr v-for="item in data?.attendance_list || []" :key="item.student_id" class="hover:bg-gray-50/50 transition">
-                  <td class="py-3 px-2 text-gray-400 whitespace-nowrap">{{ item.no }}</td>
-                  <td class="py-3 px-2 font-semibold text-gray-900 whitespace-nowrap">
-                    <div class="flex items-center gap-2">
-                      <span>{{ item.name }}</span>
+            <!-- Mobile Card View -->
+            <div class="block md:hidden space-y-2.5">
+              <div
+                v-for="item in data?.attendance_list || []"
+                :key="item.student_id"
+                class="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-bold text-xs text-gray-900">{{ item.name }}</span>
                       <span v-if="item.is_self" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                         Anda
                       </span>
-                      <span
-                        v-if="item.is_rejected_leave"
-                        class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
-                        :title="item.rejection_reason || 'Surat izin ditolak Wali Kelas - Wajib verifikasi fisik di kelas'"
-                      >
-                        Izin Ditolak Walas
-                      </span>
                     </div>
-                  </td>
-                  <td class="py-3 px-2 text-gray-500 whitespace-nowrap">{{ item.nis }}</td>
-                  <td class="py-3 px-2 text-center whitespace-nowrap"><StatusBadge :status="item.status" /></td>
-                  <td class="py-3 px-2 text-gray-500 max-w-xs truncate" :title="item.note || '-'">{{ item.note || '-' }}</td>
-                  <td class="py-3 px-2 text-right whitespace-nowrap">
-                    <span v-if="item.verified" class="inline-flex items-center text-emerald-600 font-semibold gap-1 text-[11px] whitespace-nowrap">
-                      <CheckCircle2 class="w-3.5 h-3.5" /> Terverifikasi
-                    </span>
-                    <span v-else class="text-gray-400 text-[11px] whitespace-nowrap">-</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    <span class="text-[11px] text-gray-400">NIS: {{ item.nis }}</span>
+                  </div>
+                  <StatusBadge :status="item.status" />
+                </div>
+
+                <div v-if="item.is_rejected_leave" class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 p-1.5 rounded-lg">
+                  Izin Ditolak Walas: {{ item.rejection_reason || 'Wajib verifikasi fisik di kelas' }}
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] pt-1 border-t border-gray-100">
+                  <span class="text-gray-500 truncate max-w-[200px]">{{ item.note || '-' }}</span>
+                  <span v-if="item.verified" class="inline-flex items-center text-emerald-600 font-semibold gap-1 text-[11px]">
+                    <CheckCircle2 class="w-3.5 h-3.5" /> Terverifikasi
+                  </span>
+                  <span v-else class="text-gray-400 text-[11px]">-</span>
+                </div>
+              </div>
+              <div v-if="!data?.attendance_list?.length" class="text-center py-6 text-gray-400 text-xs">
+                Belum ada data presensi kelas.
+              </div>
+            </div>
+
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto -mx-2 sm:mx-0">
+              <table class="w-full text-left text-xs min-w-[550px]">
+                <thead>
+                  <tr class="text-gray-400 uppercase text-[10px] border-b border-gray-100 font-bold">
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap w-10">No</th>
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap">Nama Siswa</th>
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap">NIS</th>
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap text-center">Status Presensi</th>
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap">Keterangan</th>
+                    <th class="pb-3 px-2 font-semibold whitespace-nowrap text-right">Verifikasi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                  <tr v-for="item in data?.attendance_list || []" :key="item.student_id" class="hover:bg-gray-50/50 transition">
+                    <td class="py-3 px-2 text-gray-400 whitespace-nowrap">{{ item.no }}</td>
+                    <td class="py-3 px-2 font-semibold text-gray-900 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <span>{{ item.name }}</span>
+                        <span v-if="item.is_self" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                          Anda
+                        </span>
+                        <span
+                          v-if="item.is_rejected_leave"
+                          class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                          :title="item.rejection_reason || 'Surat izin ditolak Wali Kelas - Wajib verifikasi fisik di kelas'"
+                        >
+                          Izin Ditolak Walas
+                        </span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-2 text-gray-500 whitespace-nowrap">{{ item.nis }}</td>
+                    <td class="py-3 px-2 text-center whitespace-nowrap"><StatusBadge :status="item.status" /></td>
+                    <td class="py-3 px-2 text-gray-500 max-w-xs truncate" :title="item.note || '-'">{{ item.note || '-' }}</td>
+                    <td class="py-3 px-2 text-right whitespace-nowrap">
+                      <span v-if="item.verified" class="inline-flex items-center text-emerald-600 font-semibold gap-1 text-[11px] whitespace-nowrap">
+                        <CheckCircle2 class="w-3.5 h-3.5" /> Terverifikasi
+                      </span>
+                      <span v-else class="text-gray-400 text-[11px] whitespace-nowrap">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </template>
+
+        <!-- ================= MODE SISWA (BELAJAR & MANDIRI) ================= -->
+        <template v-else>
+          <!-- Kartu Status Kehadiran Pribadi Sekretaris Sendiri -->
+          <div
+            :class="[
+              'bg-white rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4 border transition',
+              data?.self_attendance?.is_leave_rejected
+                ? 'border-rose-200'
+                : data?.self_attendance?.is_leave_approved
+                ? 'border-orange-200'
+                : data?.self_attendance?.has_pending_leave
+                ? 'border-amber-200'
+                : data?.self_attendance?.status === 'HADIR'
+                ? 'border-emerald-200'
+                : 'border-blue-150'
+            ]"
+          >
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="space-y-1.5 min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-primary border border-blue-200">
+                    Status Kehadiran Pribadi Siswa
+                  </span>
+                  <span class="text-xs text-gray-500 font-medium">
+                    {{ data?.self_attendance?.date_formatted || 'Hari Ini' }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span class="text-xs font-semibold text-gray-700">Status Kehadiran Anda Hari Ini:</span>
+                  <StatusBadge :status="data?.self_attendance?.status || 'BELUM_PRESENSI'" />
+                  <span v-if="data?.self_attendance?.note" class="text-xs text-gray-500 break-words">— {{ data?.self_attendance?.note }}</span>
+                </div>
+              </div>
+
+              <!-- Quick Action Buttons for Secretary's Personal Attendance -->
+              <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
+                <button
+                  v-if="!data?.self_attendance?.checked_in && !data?.self_attendance?.is_leave_approved && !data?.self_attendance?.has_pending_leave && !data?.self_attendance?.is_leave_rejected"
+                  type="button"
+                  @click="handleSelfCheckIn"
+                  :disabled="isCheckingIn"
+                  class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
+                >
+                  <CheckCircle2 class="w-4 h-4" />
+                  <span>{{ isCheckingIn ? 'Menyimpan...' : 'Presensi Hadir Mandiri' }}</span>
+                </button>
+
+                <NuxtLink
+                  to="/surat-izin"
+                  class="px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto min-h-[44px]"
+                >
+                  <Mail class="w-3.5 h-3.5 text-primary" />
+                  <span>Ajukan Izin Saya</span>
+                </NuxtLink>
+
+                <NuxtLink
+                  to="/jurnal-pelajaran"
+                  class="px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto min-h-[44px]"
+                >
+                  <BookOpen class="w-3.5 h-3.5 text-primary" />
+                  <span>Jurnal Pelajaran & Modul</span>
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Access Cards Mode Siswa -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <NuxtLink
+              to="/jurnal-pelajaran"
+              class="p-4 bg-white rounded-2xl border border-gray-150 hover:border-primary transition shadow-2xs flex items-center gap-3"
+            >
+              <div class="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center shrink-0">
+                <BookOpen class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-gray-900 block">Jurnal Pelajaran & Modul</span>
+                <span class="text-[11px] text-gray-400">Lihat catatan guru, tugas & unduh PDF</span>
+              </div>
+            </NuxtLink>
+
+            <NuxtLink
+              to="/riwayat-kehadiran"
+              class="p-4 bg-white rounded-2xl border border-gray-150 hover:border-primary transition shadow-2xs flex items-center gap-3"
+            >
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <CalendarCheck class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-gray-900 block">Riwayat Kehadiran Pribadi</span>
+                <span class="text-[11px] text-gray-400">Grafik donut & bar mingguan</span>
+              </div>
+            </NuxtLink>
+
+            <NuxtLink
+              to="/surat-izin"
+              class="p-4 bg-white rounded-2xl border border-gray-150 hover:border-primary transition shadow-2xs flex items-center gap-3"
+            >
+              <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <Mail class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-gray-900 block">Status Surat Izin</span>
+                <span class="text-[11px] text-gray-400">Pantau verifikasi dari Wali Kelas</span>
+              </div>
+            </NuxtLink>
+          </div>
+        </template>
       </template>
 
       <!-- ============================================== -->
@@ -1410,6 +1486,7 @@ const isLoading = ref(true)
 const isCheckingIn = ref(false)
 const checkInMessage = ref('')
 const selectedMajorFilter = ref('ALL')
+const secretaryTab = ref<'KELAS' | 'SISWA'>('KELAS')
 const studentJournalTab = ref<'journals' | 'materials'>('journals')
 
 if (process.client) {

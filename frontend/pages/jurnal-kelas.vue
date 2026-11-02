@@ -75,6 +75,7 @@
               <option value="ALL">Semua Status Konfirmasi</option>
               <option value="TERVERIFIKASI">Terverifikasi Guru</option>
               <option value="PENDING">Menunggu Konfirmasi</option>
+              <option value="PERLU_REVISI">Perlu Revisi Guru</option>
             </select>
           </div>
         </div>
@@ -216,6 +217,13 @@
                 >
                   <CheckCircle2 class="w-3 h-3 text-emerald-600" />
                   <span>Terverifikasi</span>
+                </span>
+                <span
+                  v-else-if="agenda.status === 'PERLU_REVISI'"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shrink-0"
+                >
+                  <AlertCircle class="w-3 h-3 text-rose-600" />
+                  <span>Perlu Revisi</span>
                 </span>
                 <span
                   v-else
@@ -360,6 +368,14 @@
                     <span>Terverifikasi Guru</span>
                   </span>
                   <span
+                    v-else-if="agenda.status === 'PERLU_REVISI'"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                    title="Draf dikembalikan oleh Guru Pengajar untuk direvisi"
+                  >
+                    <AlertCircle class="w-3.5 h-3.5 text-rose-600" />
+                    <span>Perlu Revisi Guru</span>
+                  </span>
+                  <span
                     v-else
                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
                     title="Menunggu konfirmasi / paraf guru pengajar terkait"
@@ -382,9 +398,19 @@
                     <span>Sahkan</span>
                   </button>
 
+                  <!-- Tombol Edit jika PERLU_REVISI -->
+                  <button
+                    v-if="agenda.created_by_id === authStore.user?.id && agenda.status === 'PERLU_REVISI'"
+                    type="button"
+                    @click="openEditModal(agenda)"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[11px] font-bold transition cursor-pointer"
+                    title="Perbaiki draf sesuai catatan koreksi guru"
+                  >
+                    <span>Perbaiki</span>
+                  </button>
                   <!-- Tombol Hapus (jika pembuat dan masih PENDING) -->
                   <button
-                    v-if="agenda.created_by_id === authStore.user?.id && agenda.status === 'PENDING'"
+                    v-if="agenda.created_by_id === authStore.user?.id && (agenda.status === 'PENDING' || agenda.status === 'PERLU_REVISI')"
                     type="button"
                     @click="deleteAgenda(agenda)"
                     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-[11px] font-bold transition cursor-pointer"

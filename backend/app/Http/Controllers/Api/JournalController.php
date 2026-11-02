@@ -347,12 +347,17 @@ class JournalController extends Controller
             }
         }
 
-        $journal->update([
+        $updateData = [
             'activity' => $activity,
             'notes' => $notesToStore,
             'date' => $request->date ?: $journal->date,
             'schedule_id' => $request->schedule_id ?: $journal->schedule_id,
-        ]);
+        ];
+        if ($journal->verification_status === 'PERLU_REVISI') {
+            $updateData['verification_status'] = 'PENDING';
+        }
+
+        $journal->update($updateData);
 
         AuditLog::create([
             'user_id' => $user->id,
@@ -394,6 +399,43 @@ class JournalController extends Controller
         ]);
 
         return response()->json(['message' => 'Jurnal kegiatan berhasil dikonfirmasi']);
+    }
+
+    public function revisionClassJournal(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!in_array($user->role, ['GURU_PENGAJAR', 'GURU_PEMBIMBING', 'SUPERADMIN'])) {
+            return response()->json(['message' => 'Hanya Guru Pengajar, Wali Kelas, atau Superadmin yang berhak meminta revisi jurnal kegiatan.'], 403);
+        }
+        $request->validate([
+            'notes' => 'required|string|min:3',
+        ]);
+        $journal = ClassJournal::findOrFail($id);
+
+        $journal->update([
+            'verification_status' => 'PERLU_REVISI',
+            'notes' => ($journal->notes ? $journal->notes . "\n\n" : '') . '[Catatan Koreksi Guru (' . $user->name . ')]: ' . $request->notes,
+        ]);
+
+        if ($journal->created_by_id) {
+            Notification::create([
+                'user_id' => $journal->created_by_id,
+                'type' => 'JURNAL',
+                'title' => 'Catatan Koreksi Jurnal KBM',
+                'body' => $user->name . ' mengembalikan draf agenda KBM untuk direvisi: "' . $request->notes . '"',
+            ]);
+        }
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'Mengembalikan draf jurnal kegiatan ID #' . $journal->id . ' untuk direvisi',
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'message' => 'Catatan koreksi berhasil dikirimkan ke Sekretaris Kelas.',
+            'journal' => $journal,
+        ]);
     }
 
     public function getMaterialJournals(Request $request)

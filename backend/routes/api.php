@@ -71,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/journals/class/{id}', [JournalController::class, 'deleteClassJournal']);
     Route::put('/journals/class/{id}/confirm', [JournalController::class, 'confirmClassJournal']);
     Route::post('/journals/class/{id}/confirm', [JournalController::class, 'confirmClassJournal']);
+    Route::put('/journals/class/{id}/revision', [JournalController::class, 'revisionClassJournal']);
+    Route::post('/journals/class/{id}/revision', [JournalController::class, 'revisionClassJournal']);
     Route::get('/journals/material', [JournalController::class, 'getMaterialJournals']);
     Route::post('/journals/material', [JournalController::class, 'storeMaterialJournal']);
     Route::put('/journals/material/{id}', [JournalController::class, 'updateMaterialJournal']);

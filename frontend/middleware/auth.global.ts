@@ -44,6 +44,7 @@ const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
     '/rekap-semester',
     '/notifikasi',
     '/broadcast',
+    '/presensi-override',
   ],
   ORANG_TUA: [
     '/dashboard',

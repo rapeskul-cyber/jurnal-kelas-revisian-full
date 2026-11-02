@@ -357,16 +357,16 @@
           <template v-else>
             <div class="space-y-2 pt-2 border-t border-gray-100">
               <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                PIN / Password Sekretaris
+                PIN Pengunci / Password Otorisasi Sesi
               </label>
               <input
                 v-model="pin"
                 type="password"
-                placeholder="••••••••••••"
+                placeholder="PIN 1234 atau kata sandi akun"
                 class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <p class="text-[10px] text-gray-400">
-                Masukkan password akun Anda untuk mengunci atau memperbarui presensi harian.
+                Gunakan PIN otorisasi sesi (1234) atau kata sandi akun Anda untuk mengunci presensi resmi.
               </p>
             </div>
 
@@ -631,7 +631,7 @@ async function handleDraft() {
 async function handleLock() {
   if (!pin.value) {
     toastError.value = true
-    toastMessage.value = 'Silakan masukkan password akun Anda untuk mengunci.'
+    toastMessage.value = 'Silakan masukkan PIN otorisasi (1234) atau kata sandi Anda untuk mengunci.'
     return
   }
   isSubmitting.value = true

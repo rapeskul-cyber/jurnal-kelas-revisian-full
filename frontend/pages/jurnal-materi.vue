@@ -492,15 +492,25 @@
                       </span>
                     </td>
                     <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                      <button
-                        v-if="j.status !== 'TERVERIFIKASI'"
-                        type="button"
-                        @click="confirmMonitoringJournal(j)"
-                        class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-2xs cursor-pointer"
-                      >
-                        <CheckIcon class="w-3 h-3" />
-                        <span>Sahkan</span>
-                      </button>
+                      <div v-if="j.status !== 'TERVERIFIKASI'" class="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          @click="openRevisionModal(j)"
+                          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                          title="Kembalikan draf dengan catatan revisi"
+                        >
+                          <RotateCcwIcon class="w-3 h-3" />
+                          <span>Revisi</span>
+                        </button>
+                        <button
+                          type="button"
+                          @click="confirmMonitoringJournal(j)"
+                          class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                        >
+                          <CheckIcon class="w-3 h-3" />
+                          <span>Sahkan</span>
+                        </button>
+                      </div>
                       <span v-else class="text-xs text-gray-400 font-semibold">Tersahkan</span>
                     </td>
                   </tr>
@@ -620,6 +630,17 @@
           >
             <Edit2Icon class="w-3.5 h-3.5 text-amber-700" />
             <span>Edit Jurnal</span>
+          </button>
+
+          <!-- Revisi button if Menunggu -->
+          <button
+            v-if="activeModalItem.status.includes('Menunggu')"
+            type="button"
+            @click="openRevisionModal(activeModalItem)"
+            class="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcwIcon class="w-3.5 h-3.5 text-rose-600" />
+            <span>Minta Revisi</span>
           </button>
 
           <!-- Konfirmasi button if Menunggu -->
@@ -1015,6 +1036,63 @@
         </form>
       </div>
     </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL REVISI: BERI CATATAN KOREKSI KBM         -->
+    <!-- ============================================== -->
+    <div
+      v-if="revisionModalItem"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+    >
+      <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+              Pengembalian Draf KBM
+            </span>
+            <h3 class="text-base font-bold text-gray-900 mt-1">Beri Catatan Koreksi untuk Sekretaris</h3>
+          </div>
+          <button @click="revisionModalItem = null" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+            <XIcon class="w-4 h-4" />
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <p class="text-gray-600 leading-relaxed">
+            Draf jurnal KBM <strong>{{ revisionModalItem.subject || 'Agenda Kelas' }}</strong> akan dikembalikan ke status koreksi. Notifikasi dan catatan koreksi akan langsung dikirimkan ke Sekretaris Kelas.
+          </p>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Catatan Koreksi Guru *</label>
+            <textarea
+              v-model="revisionNotes"
+              rows="4"
+              required
+              placeholder="Contoh: Mohon perbaiki pokok bahasan KD praktikum dan tambahkan siswa yang izin."
+              class="w-full p-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            @click="revisionModalItem = null"
+            class="px-4 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="submitRevision"
+            :disabled="!revisionNotes.trim() || submittingRevision"
+            class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+          >
+            <RotateCcwIcon class="w-3.5 h-3.5" />
+            <span>{{ submittingRevision ? 'Mengirim...' : 'Kembalikan Draf' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1022,6 +1100,7 @@
 import {
   FileText as FileTextIcon,
   CheckCircle2 as CheckCircle2Icon,
+  RotateCcwIcon,
   X as XIcon,
   Plus as PlusIcon,
   Lock as LockIcon,
@@ -1492,6 +1571,39 @@ const fetchMonitoringData = async () => {
     monitoringJournals.value = []
   } finally {
     monitoringLoading.value = false
+  }
+}
+
+const revisionModalItem = ref<any | null>(null)
+const revisionNotes = ref('')
+const submittingRevision = ref(false)
+
+const openRevisionModal = (item: any) => {
+  revisionModalItem.value = item
+  revisionNotes.value = ''
+  if (activeModalItem.value) {
+    activeModalItem.value = null
+  }
+}
+
+const submitRevision = async () => {
+  if (!revisionModalItem.value || !revisionNotes.value.trim()) return
+  submittingRevision.value = true
+  try {
+    const journalId = revisionModalItem.value.journal_id || revisionModalItem.value.id
+    await $fetch(`${config.public.apiBase}/journals/class/${journalId}/revision`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authStore.token}` },
+      body: { notes: revisionNotes.value.trim() }
+    })
+    successMsg.value = 'Draf KBM berhasil dikembalikan ke Sekretaris Kelas dengan catatan koreksi!'
+    revisionModalItem.value = null
+    fetchMonitoringData()
+    fetchTeacherSchedulesAndJournals()
+  } catch (err: any) {
+    console.error('Revision error:', err)
+  } finally {
+    submittingRevision.value = false
   }
 }
 
