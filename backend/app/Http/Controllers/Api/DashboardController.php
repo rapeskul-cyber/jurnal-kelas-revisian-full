@@ -248,12 +248,7 @@ class DashboardController extends Controller
                     ->first();
         }
 
-        if (!$child && $user->class_id) {
-            $child = User::with('schoolClass.advisor')
-                ->where('class_id', $user->class_id)
-                ->whereIn('role', ['SISWA', 'SEKRETARIS'])
-                ->first();
-        }
+        // Tanpa fallback sembarangan ke siswa lain jika belum terhubung
 
         $classId = $child?->class_id ?: ($user->class_id ?: 1);
         $schoolClass = SchoolClass::with('advisor')->find($classId);
@@ -641,6 +636,7 @@ class DashboardController extends Controller
             'recent_journals' => $recentJournals,
             'session_status' => $session ? $session->status : 'DRAFT',
             'verification_status' => $session ? $session->verification_status : 'BELUM_KONFIRMASI',
+            'today_timeline' => $this->getTodayTimeline($classId, $today),
         ]);
     }
 
@@ -718,10 +714,13 @@ class DashboardController extends Controller
             $reminders[] = $pendingLeavesCount . ' surat izin menunggu verifikasi Wali Kelas';
         }
 
+        $actualTaughtClasses = $user->taughtClasses()->count() ?: (Schedule::where('teacher_id', $user->id)->distinct('class_id')->count('class_id') ?: 1);
+        $actualJamMengajar = $schedules->count() ?: 0;
+
         return response()->json([
             'stats' => [
-                'kelas_diampu' => $taughtClasses . ' Kelas',
-                'jam_mengajar' => '5 Jam',
+                'kelas_diampu' => $actualTaughtClasses . ' Kelas',
+                'jam_mengajar' => $actualJamMengajar . ' Jam',
                 'jurnal_terisi' => $filledJournals . '/' . $totalSchedules . ' Pertemuan',
                 'jurnal_belum_diisi' => $unfilled . ' Pertemuan',
             ],
@@ -739,34 +738,72 @@ class DashboardController extends Controller
 
     private function pembimbingDashboard(User $user, $today)
     {
-        $allClasses = SchoolClass::with(['secretary'])->orderBy('name')->get();
+        // 1. Dapatkan kelas binaan wali kelas (berdasarkan advisor_id atau class_id)
+        $guidedClass = SchoolClass::with(['secretary', 'advisor'])->where('advisor_id', $user->id)->first()
+            ?? SchoolClass::with(['secretary', 'advisor'])->find($user->class_id);
+
+        $daysMap = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
+        $currentDayName = $daysMap[Carbon::parse($today)->dayOfWeekIso] ?? 'Senin';
+
+        if (!$guidedClass) {
+            return response()->json([
+                'stats' => [
+                    'total_kelas' => 'Belum Tertaut',
+                    'total_siswa' => '0 Siswa',
+                    'jurnal_terisi' => '0 / 0 Sesi',
+                    'surat_izin_pending' => '0 Permohonan',
+                ],
+                'monitored_classes' => [],
+                'pending_leaves' => [],
+            ]);
+        }
+
+        // 2. Data siswa kelas binaan
+        $totalStudents = User::where('class_id', $guidedClass->id)->whereIn('role', ['SISWA', 'SEKRETARIS'])->count();
+
+        // 3. Status Sesi Presensi Hari Ini
+        $session = AttendanceSession::where('class_id', $guidedClass->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        $presentCount = $session ? $session->records()->where('status', 'HADIR')->count() : 0;
+        $attendanceText = $session
+            ? "{$presentCount} / {$totalStudents} Hadir (" . ($totalStudents > 0 ? round(($presentCount / $totalStudents) * 100) : 0) . "%)"
+            : 'Belum Ada Sesi Presensi';
+
+        // 4. Jurnal KBM Kelas Hari Ini
+        $todayJournals = ClassJournal::where('class_id', $guidedClass->id)
+            ->whereDate('date', $today)
+            ->get();
+
+        $todaySchedulesCount = Schedule::where('class_id', $guidedClass->id)->where('day', $currentDayName)->count();
+        if ($todaySchedulesCount === 0) {
+            $todaySchedulesCount = Schedule::where('class_id', $guidedClass->id)->count() ?: 1;
+        }
+
+        $latestJournal = $todayJournals->sortByDesc('id')->first();
+        $journalStatus = $latestJournal
+            ? ($latestJournal->verification_status === 'TERVERIFIKASI' ? 'Terverifikasi' : 'Menunggu Paraf Guru')
+            : 'Belum Diisi';
+
+        $monitoredClasses = [
+            [
+                'id' => $guidedClass->id,
+                'class' => $guidedClass->name,
+                'secretary' => $guidedClass->secretary->name ?? 'Belum Diangkat',
+                'journal_status' => $journalStatus,
+                'attendance_percent' => $attendanceText,
+                'total_students' => $totalStudents,
+                'present_count' => $presentCount,
+            ]
+        ];
+
+        // 5. Surat Izin Pending KHUSUS Kelas Binaan
         $pendingLeaves = LeaveRequest::with(['student.schoolClass'])
+            ->whereHas('student', fn($q) => $q->where('class_id', $guidedClass->id))
             ->where('status', 'PENDING')
             ->latest()
             ->get();
-
-        $monitoredClasses = $allClasses->map(function ($cls) use ($today) {
-            $session = AttendanceSession::where('class_id', $cls->id)
-                ->where('date', $today)
-                ->first();
-
-            $journal = ClassJournal::where('class_id', $cls->id)
-                ->where('date', $today)
-                ->latest()
-                ->first();
-
-            $totalStudents = User::where('class_id', $cls->id)->whereIn('role', ['SISWA', 'SEKRETARIS'])->count() ?: 36;
-            $presentCount = $session ? $session->records()->where('status', 'HADIR')->count() : round($totalStudents * 0.91);
-            $pct = round(($presentCount / $totalStudents) * 100);
-
-            return [
-                'id' => $cls->id,
-                'class' => $cls->name,
-                'secretary' => $cls->secretary->name ?? '-',
-                'journal_status' => $journal ? ($journal->verification_status === 'TERVERIFIKASI' ? 'Sudah Diisi' : 'Menunggu Konfirmasi Guru Pengajar') : 'Belum Diisi',
-                'attendance_percent' => "{$pct}% Kehadiran",
-            ];
-        });
 
         $leaveList = $pendingLeaves->map(function ($lv) {
             return [
@@ -782,8 +819,9 @@ class DashboardController extends Controller
 
         return response()->json([
             'stats' => [
-                'total_kelas' => $allClasses->count() . ' Kelas',
-                'jurnal_terisi' => '4 / ' . $allClasses->count() . ' Kelas',
+                'total_kelas' => $guidedClass->name,
+                'total_siswa' => $totalStudents . ' Siswa',
+                'jurnal_terisi' => $todayJournals->count() . ' / ' . $todaySchedulesCount . ' Sesi',
                 'surat_izin_pending' => $pendingLeaves->count() . ' Permohonan',
             ],
             'monitored_classes' => $monitoredClasses,

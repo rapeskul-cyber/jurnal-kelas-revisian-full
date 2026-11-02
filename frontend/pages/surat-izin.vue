@@ -153,18 +153,15 @@
               </p>
             </div>
 
-            <!-- Ditujukan Kepada -->
+            <!-- Ditujukan Kepada (Khusus ke Wali Kelas Saja) -->
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                Ditujukan Kepada *
+                Ditujukan Kepada
               </label>
-              <select
-                v-model="form.recipient"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
-              >
-                <option value="Wali Kelas">Wali Kelas</option>
-                <option value="Wali Kelas & Guru Pengajar">Wali Kelas & Guru Pengajar</option>
-              </select>
+              <div class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-800 flex items-center gap-2 select-none">
+                <span class="w-2 h-2 rounded-full bg-primary"></span>
+                <span>Wali Kelas</span>
+              </div>
             </div>
 
             <!-- Alasan Izin -->
@@ -197,10 +194,10 @@
                 <button
                   type="button"
                   @click="fileInputRef?.click()"
-                  class="px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 transition cursor-pointer"
+                  class="px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 transition cursor-pointer min-h-[44px] max-w-full"
                 >
-                  <UploadCloudIcon class="w-4 h-4 text-primary" />
-                  <span>{{ selectedFile ? selectedFile.name : 'Pilih Berkas (PDF, JPG, PNG)' }}</span>
+                  <UploadCloudIcon class="w-4 h-4 text-primary shrink-0" />
+                  <span class="truncate max-w-[200px] sm:max-w-xs">{{ selectedFile ? selectedFile.name : 'Pilih Berkas (PDF, JPG, PNG)' }}</span>
                 </button>
                 <button
                   v-if="selectedFile"

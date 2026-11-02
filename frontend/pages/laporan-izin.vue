@@ -8,10 +8,11 @@
         <button
           @click="exportExcel"
           type="button"
-          class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Ekspor Data CSV"
         >
-          <DownloadIcon class="w-3.5 h-3.5 text-gray-500" />
-          <span>Ekspor Rekap XLSX</span>
+          <DownloadIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+          <span class="hidden sm:inline">Ekspor Data CSV</span>
         </button>
       </template>
     </AppHeader>
@@ -25,7 +26,7 @@
           <label class="block text-[11px] font-semibold text-gray-500 mb-1">Filter Status</label>
           <select
             v-model="statusFilter"
-            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
+            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer min-h-[38px]"
           >
             <option value="Semua">Semua Status</option>
             <option value="PENDING">Menunggu Konfirmasi</option>
@@ -33,17 +34,26 @@
             <option value="REJECTED">Ditolak</option>
           </select>
         </div>
-        <div>
+
+        <!-- Filter Kelas: Otomatis Terdeteksi untuk Wali Kelas (GURU_PEMBIMBING), Pilihan Manual Khusus Superadmin -->
+        <div v-if="isWalas">
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Kelas Binaan</label>
+          <div class="px-3.5 py-2 rounded-xl bg-blue-50/70 border border-blue-200 text-xs font-semibold text-primary shadow-2xs flex items-center gap-1.5 whitespace-nowrap min-h-[38px]">
+            <span class="w-2 h-2 rounded-full bg-primary"></span>
+            <span>Kelas: {{ walasClassName }}</span>
+            <span class="text-[10px] text-blue-600/80 font-normal ml-0.5">(Auto-Detect)</span>
+          </div>
+        </div>
+        <div v-else-if="authStore.user?.role === 'SUPERADMIN'">
           <label class="block text-[11px] font-semibold text-gray-500 mb-1">Pilih Kelas</label>
           <select
             v-model="classFilter"
-            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
+            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer min-h-[38px]"
           >
             <option value="Semua">Semua Kelas</option>
-            <option value="1">Kelas Industri RPL</option>
-            <option value="2">XI RPL 2 (Kelas Industri)</option>
-            <option value="3">XII RPL 1 (Kelas Industri)</option>
-            <option value="4">XII RPL 2 (Kelas Industri)</option>
+            <option v-for="cls in availableClasses" :key="cls.id" :value="String(cls.id)">
+              {{ cls.name }}
+            </option>
           </select>
         </div>
       </div>
@@ -217,14 +227,37 @@ const toast = useToastStore()
 
 const loading = ref(false)
 const list = ref<any[]>([])
+const availableClasses = ref<any[]>([])
 const statusFilter = ref('Semua')
-const classFilter = ref('Semua')
+const myWalasClassId = authStore.user?.class_id || authStore.user?.guided_class?.id
+const classFilter = ref(authStore.user?.role === 'GURU_PEMBIMBING' && myWalasClassId ? String(myWalasClassId) : 'Semua')
 const searchQuery = ref('')
+
+const fetchClasses = async () => {
+  try {
+    const res: any = await $fetch(`${config.public.apiBase}/master/classes`, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    })
+    if (Array.isArray(res)) {
+      availableClasses.value = res
+    }
+  } catch (e) {
+    console.warn('Error fetching classes:', e)
+  }
+}
+
+const isWalas = computed(() => {
+  return authStore.user?.role === 'GURU_PEMBIMBING'
+})
+
+const walasClassName = computed(() => {
+  return authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Binaan'
+})
 
 const filteredList = computed(() => {
   return list.value.filter(item => {
     const matchStatus = statusFilter.value === 'Semua' || item.status === statusFilter.value
-    const matchClass = classFilter.value === 'Semua' || String(item.class_id || '') === classFilter.value || (item.class && item.class.includes(classFilter.value))
+    const matchClass = isWalas.value || classFilter.value === 'Semua' || String(item.class_id || '') === classFilter.value || (item.class && item.class.includes(classFilter.value))
     const matchSearch =
       !searchQuery.value ||
       item.student_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -277,7 +310,10 @@ const exportExcel = () => {
   document.body.removeChild(link)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (authStore.user?.role === 'SUPERADMIN') {
+    await fetchClasses()
+  }
   fetchList()
 })
 </script>

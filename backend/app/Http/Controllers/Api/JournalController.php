@@ -43,11 +43,7 @@ class JournalController extends Controller
                         ->whereIn('role', ['SISWA', 'SEKRETARIS'])
                         ->first();
             }
-            if (!$child && $user->class_id) {
-                $child = User::where('class_id', $user->class_id)
-                    ->whereIn('role', ['SISWA', 'SEKRETARIS'])
-                    ->first();
-            }
+            // Tanpa fallback sembarangan ke siswa lain
             if ($child) {
                 $query->where('created_by_id', $child->id);
             } else {
@@ -67,6 +63,8 @@ class JournalController extends Controller
             $targetClassId = $class ? $class->id : ($classId ?: $user->class_id);
             if ($targetClassId) {
                 $query->where('class_id', $targetClassId);
+            } else {
+                $query->where('id', 0);
             }
         } elseif ($user->role === 'GURU_PENGAJAR') {
             if ($type === 'class_agenda') {

@@ -9,10 +9,12 @@
           v-if="isStudentOrSekre"
           type="button"
           @click="showAddActivityModal = true"
-          class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center gap-2 cursor-pointer whitespace-nowrap"
+          class="px-2.5 sm:px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Lapor Catatan Belajar"
         >
-          <Plus class="w-4 h-4" />
-          <span>Lapor Catatan Belajar</span>
+          <Plus class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline">Lapor Catatan Belajar</span>
+          <span class="sm:hidden text-[11px] font-bold">Catat</span>
         </button>
       </template>
     </AppHeader>

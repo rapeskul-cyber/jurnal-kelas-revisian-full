@@ -221,7 +221,7 @@ const turnstileToken = ref<string>('')
 const turnstileWidgetId = ref<string | null>(null)
 
 const currentStep = ref(1)
-const email = ref('rina.safitri@gmail.com')
+const email = ref('')
 const maskedEmail = ref('')
 const maskedPhone = ref('')
 const otp = ref('')
@@ -240,9 +240,11 @@ function renderTurnstile() {
     try {
       turnstileWidgetId.value = win.turnstile.render(turnstileContainer.value, {
         sitekey: turnstileSiteKey.value,
-        size: 'invisible',
+        theme: 'light',
         callback: (token: string) => {
           turnstileToken.value = token
+          message.value = ''
+          isError.value = false
         },
         'expired-callback': () => {
           turnstileToken.value = ''
@@ -265,8 +267,8 @@ onMounted(() => {
         renderTurnstile()
         clearInterval(interval)
       }
-    }, 250)
-    setTimeout(() => clearInterval(interval), 6000)
+    }, 200)
+    setTimeout(() => clearInterval(interval), 10000)
   }
 })
 
@@ -289,14 +291,19 @@ async function handleStep1() {
       if (win.turnstile && turnstileWidgetId.value) {
         try {
           win.turnstile.execute(turnstileWidgetId.value)
-          let waitCycles = 0
-          while (!turnstileToken.value && waitCycles < 15) {
-            await new Promise((r) => setTimeout(r, 100))
-            waitCycles++
-          }
-        } catch (e) {
-          console.warn('Turnstile execution note:', e)
-        }
+        } catch (e) {}
+      }
+      let waitCycles = 0
+      while (!turnstileToken.value && waitCycles < 40) {
+        await new Promise((r) => setTimeout(r, 100))
+        waitCycles++
+      }
+
+      if (!turnstileToken.value) {
+        message.value = 'Mohon selesaikan verifikasi keamanan anti-bot (Cloudflare Turnstile) di atas sebelum mengirim OTP.'
+        isError.value = true
+        isLoading.value = false
+        return
       }
     }
 

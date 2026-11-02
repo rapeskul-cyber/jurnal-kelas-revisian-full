@@ -103,6 +103,30 @@ export const useAuthStore = defineStore('auth', () => {
     navigateTo('/login')
   }
 
+  async function fetchUser() {
+    if (!token.value && import.meta.client) {
+      token.value = localStorage.getItem('token')
+    }
+    if (!token.value) return null
+    try {
+      const freshUser = await $fetch<User>(`${apiBase}/auth/me`, {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      if (freshUser) {
+        user.value = freshUser
+        if (import.meta.client) {
+          localStorage.setItem('user', JSON.stringify(freshUser))
+        }
+      }
+      return freshUser
+    } catch (e: any) {
+      if (e?.status === 401) {
+        await logout()
+      }
+      return null
+    }
+  }
+
   return {
     user,
     token,
@@ -113,5 +137,6 @@ export const useAuthStore = defineStore('auth', () => {
     setAuth,
     login,
     logout,
+    fetchUser,
   }
 })

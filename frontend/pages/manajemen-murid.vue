@@ -584,21 +584,34 @@
             />
           </div>
 
-          <div class="pt-3 border-t border-gray-150 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              @click="showParentModal = false"
-              class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              :disabled="savingParent"
-              class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              <span>{{ savingParent ? 'Menyimpan...' : 'Simpan & Hubungkan Akun Ortu' }}</span>
-            </button>
+          <div class="pt-3 border-t border-gray-150 flex items-center justify-between gap-2">
+            <div>
+              <button
+                v-if="targetParentStudent?.parent_user"
+                type="button"
+                @click="handleDisconnectParent"
+                :disabled="savingParent"
+                class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition cursor-pointer"
+              >
+                Putuskan Hubungan
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="showParentModal = false"
+                class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                :disabled="savingParent"
+                class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span>{{ savingParent ? 'Menyimpan...' : 'Simpan & Hubungkan Akun Ortu' }}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -665,12 +678,14 @@
           <!-- NISN & No WA -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block font-bold text-gray-700 mb-1">NISN / NIS *</label>
+              <label class="block font-bold text-gray-700 mb-1">NISN / NIS (Khusus Angka) *</label>
               <input
                 v-model="form.nip_nis"
                 type="text"
+                inputmode="numeric"
+                @input="form.nip_nis = form.nip_nis.replace(/\D/g, '')"
                 required
-                placeholder="102402"
+                placeholder="Contoh: 102402"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
@@ -875,7 +890,7 @@ const parentForm = reactive({
 })
 
 const className = computed(() => {
-  return authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Industri RPL'
+  return authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Binaan Anda'
 })
 
 const pageTitle = computed(() => {
@@ -1129,6 +1144,34 @@ async function submitParentForm() {
     await fetchClassStudents()
   } catch (e: any) {
     toast.error(e?.data?.message || 'Gagal mengintegrasikan akun orang tua.')
+  } finally {
+    savingParent.value = false
+  }
+}
+
+async function handleDisconnectParent() {
+  if (!targetParentStudent.value) return
+  const ok = await confirmDialog({
+    title: 'Putuskan Hubungan Orang Tua?',
+    message: `Putuskan integrasi akun Orang Tua dari murid "${targetParentStudent.value.name}"? Akun Orang Tua tidak akan lagi menerima notifikasi atau memantau presensi murid ini.`,
+    confirmText: 'Ya, Putuskan Hubungan',
+    cancelText: 'Batal',
+    type: 'danger',
+  })
+  if (!ok) return
+
+  savingParent.value = true
+  try {
+    const res: any = await $fetch(`${authStore.apiBase}/users/${targetParentStudent.value.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${authStore.token}` },
+      body: { disconnect_parent: true }
+    })
+    toast.success(res?.message || 'Integrasi akun Orang Tua berhasil diputus.')
+    showParentModal.value = false
+    await fetchClassStudents()
+  } catch (e: any) {
+    toast.error(e?.data?.message || 'Gagal memutuskan hubungan akun orang tua.')
   } finally {
     savingParent.value = false
   }

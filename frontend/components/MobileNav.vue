@@ -13,7 +13,7 @@
         <span class="truncate max-w-[64px] leading-tight text-center">{{ item.name }}</span>
       </NuxtLink>
 
-      <!-- More Menu Button if menus > 4 -->
+      <!-- More Menu Button if menus > 4, or direct Profile tab if menus <= 4 -->
       <button
         v-if="hasMore"
         @click="showMore = !showMore"
@@ -24,6 +24,16 @@
         <MoreHorizontal class="w-5 h-5" />
         <span class="leading-tight">Lainnya</span>
       </button>
+
+      <NuxtLink
+        v-else
+        to="/profile"
+        class="flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-xl text-[10px] transition-all min-h-[48px] min-w-[56px] active:scale-95 cursor-pointer touch-manipulation"
+        :class="isActive('/profile') ? 'text-primary font-bold bg-blue-50/90 shadow-2xs' : 'text-gray-500 hover:text-gray-900 font-medium'"
+      >
+        <User class="w-5 h-5 transition-transform" :class="isActive('/profile') ? 'scale-110' : ''" />
+        <span class="truncate max-w-[64px] leading-tight text-center">Profil</span>
+      </NuxtLink>
     </nav>
 
     <!-- More Sheet Modal (Bottom Drawer) -->
@@ -117,9 +127,20 @@ const allMenus = computed(() => {
   return ROLE_MENUS[role] || ROLE_MENUS.SISWA
 })
 
-const primaryMenus = computed(() => allMenus.value.slice(0, 4))
-const secondaryMenus = computed(() => allMenus.value.slice(4))
 const hasMore = computed(() => allMenus.value.length > 4)
+const primaryMenus = computed(() => {
+  if (hasMore.value) {
+    return allMenus.value.slice(0, 4)
+  }
+  return allMenus.value
+})
+const secondaryMenus = computed(() => {
+  const items = [...allMenus.value.slice(4)]
+  if (!items.some(m => m.to === '/profile')) {
+    items.push({ name: 'Profil Saya', to: '/profile', icon: 'User' })
+  }
+  return items
+})
 
 function isActive(path: string) {
   if (path === '/dashboard') return route.path === '/dashboard' || route.path === '/'

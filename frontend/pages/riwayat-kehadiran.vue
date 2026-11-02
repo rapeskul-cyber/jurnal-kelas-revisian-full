@@ -5,23 +5,25 @@
       :subtitle="authStore.user?.role === 'ORANG_TUA' ? 'Ringkasan dan grafik statistik presensi harian putra/putri Anda di sekolah' : 'Lakukan presensi mandiri harian dan pantau statistik kehadiran pribadi Anda'"
     >
       <template #actions>
-        <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-2">
           <button
             v-if="authStore.user?.role === 'SISWA' || authStore.user?.role === 'SEKRETARIS'"
             @click="handleSelfCheckIn"
             :disabled="isCheckingIn"
             type="button"
-            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 min-h-[40px]"
+            title="Presensi Mandiri Hari Ini"
           >
-            <CheckCircle2Icon class="w-3.5 h-3.5" />
+            <CheckCircle2Icon class="w-3.5 h-3.5 shrink-0" />
             <span>{{ isCheckingIn ? 'Menyimpan...' : 'Presensi Mandiri Hari Ini' }}</span>
           </button>
           <button
             @click="exportCsv"
             type="button"
-            class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition text-xs font-semibold flex items-center gap-2 shadow-2xs cursor-pointer"
+            class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[40px]"
+            title="Ekspor CSV"
           >
-            <DownloadIcon class="w-3.5 h-3.5 text-gray-500" />
+            <DownloadIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
             <span>Ekspor CSV</span>
           </button>
         </div>
@@ -29,6 +31,29 @@
     </AppHeader>
 
     <main class="px-4 sm:px-8 pb-8 space-y-5">
+      <!-- Mobile Quick Presensi Card for Siswa / Sekretaris -->
+      <div
+        v-if="authStore.user?.role === 'SISWA' || authStore.user?.role === 'SEKRETARIS'"
+        class="sm:hidden bg-white rounded-2xl border border-blue-200 p-4 shadow-2xs space-y-3"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold text-gray-900">Presensi Mandiri Hari Ini</span>
+          </div>
+          <span class="text-[11px] text-gray-500 font-mono">{{ new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
+        </div>
+        <p class="text-xs text-gray-500">Klik tombol di bawah untuk mencatat kehadiran harian Anda langsung dari HP tanpa antrean.</p>
+        <button
+          @click="handleSelfCheckIn"
+          :disabled="isCheckingIn"
+          type="button"
+          class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition disabled:opacity-50 cursor-pointer min-h-[44px]"
+        >
+          <CheckCircle2Icon class="w-4 h-4 shrink-0" />
+          <span>{{ isCheckingIn ? 'Menyimpan Presensi...' : 'Konfirmasi Hadir Mandiri' }}</span>
+        </button>
+      </div>
       <!-- Alert Toast if Checked In -->
       <div v-if="checkInMsg" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-2xs">
         <div class="flex items-center gap-2 text-xs font-semibold">
@@ -127,7 +152,7 @@
             <h3 class="text-sm font-bold text-gray-900">Riwayat Kehadiran Terperinci</h3>
             <p class="text-xs text-gray-400">Filter: {{ formattedMonthLabel }} • {{ filteredDetails.length }} hari tercatat</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <MonthYearPicker v-model="selectedMonth" @change="fetchHistory" />
             <select
               v-model="statusFilter"
@@ -139,6 +164,15 @@
               <option value="IZIN">Izin</option>
               <option value="ALPHA">ALFA / Belum Presensi</option>
             </select>
+            <button
+              @click="exportCsv"
+              type="button"
+              class="sm:hidden px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer min-h-[36px]"
+              title="Ekspor CSV"
+            >
+              <DownloadIcon class="w-3.5 h-3.5 text-gray-500" />
+              <span>Ekspor</span>
+            </button>
           </div>
         </div>
 

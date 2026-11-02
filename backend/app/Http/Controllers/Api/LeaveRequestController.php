@@ -28,21 +28,29 @@ class LeaveRequestController extends Controller
             $query->where('student_id', $user->id);
         } elseif ($user && $user->role === 'ORANG_TUA') {
             $child = ($user->student_id ? User::find($user->student_id) : null)
-                ?? User::where('nip_nis', $user->nip_nis)->where('role', 'SISWA')->first()
-                ?? User::where('class_id', $user->class_id)->where('role', 'SISWA')->first();
+                ?? User::where('nip_nis', $user->nip_nis)->where('role', 'SISWA')->first();
             if ($child) {
                 $query->where('student_id', $child->id);
+            } else {
+                $query->where('id', 0);
             }
+        } elseif ($user && $user->role === 'GURU_PEMBIMBING') {
+            $walasClassId = \App\Models\SchoolClass::where('advisor_id', $user->id)->value('id') ?? $user->class_id;
+            if ($walasClassId) {
+                $query->whereHas('student', function ($q) use ($walasClassId) {
+                    $q->where('class_id', $walasClassId);
+                });
+            } else {
+                $query->where('id', 0);
+            }
+        } elseif ($classId && $user && $user->role === 'SUPERADMIN') {
+            $query->whereHas('student', function ($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
         }
 
         if ($status && $status !== 'Semua') {
             $query->where('status', $status);
-        }
-
-        if ($classId) {
-            $query->whereHas('student', function ($q) use ($classId) {
-                $q->where('class_id', $classId);
-            });
         }
 
         $list = $query->get()->map(function ($lv, $idx) {
@@ -123,7 +131,7 @@ class LeaveRequestController extends Controller
             'type' => $request->type,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
-            'recipient' => $request->recipient ?: 'Wali Kelas',
+            'recipient' => 'Wali Kelas',
             'reason' => $request->reason,
             'attachment_path' => $path,
             'signature' => $request->signature,

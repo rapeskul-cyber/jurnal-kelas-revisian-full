@@ -77,8 +77,9 @@
             <span v-if="authStore.user?.nip_nis" class="flex items-center gap-1.5 font-medium">
               <span class="text-gray-400">NIS/NIP:</span> {{ authStore.user.nip_nis }}
             </span>
-            <span v-if="authStore.user?.school_class" class="flex items-center gap-1.5 font-medium">
-              <span class="text-gray-400">Kelas Binaan:</span> {{ authStore.user.school_class.name }}
+            <span v-if="authStore.user?.guided_class || authStore.user?.school_class" class="flex items-center gap-1.5 font-medium">
+              <span class="text-gray-400">{{ authStore.user?.role === 'GURU_PEMBIMBING' ? 'Kelas Binaan:' : 'Kelas:' }}</span>
+              {{ authStore.user?.guided_class?.name || authStore.user?.school_class?.name }}
             </span>
             <span class="flex items-center gap-1.5 font-medium">
               <span class="text-gray-400">Status:</span>
@@ -439,15 +440,43 @@
           </button>
         </div>
       </div>
+
+      <!-- Sesi Akun & Tombol Keluar (Logout) (Hanya tampil di Mobile) -->
+      <div class="md:hidden bg-white rounded-2xl border border-rose-200 p-4 sm:p-6 shadow-2xs space-y-3">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-gray-900">Keluar Sesi Akun</h3>
+            <p class="text-xs text-gray-500 mt-0.5">Keluar dari akun Anda pada perangkat ini dan kembali ke halaman login.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <p class="text-xs text-gray-500">
+            Pastikan seluruh perubahan data akun Anda telah disimpan sebelum keluar.
+          </p>
+          <button
+            type="button"
+            @click="handleLogout"
+            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] shrink-0"
+          >
+            <LogOut class="w-4 h-4 shrink-0" />
+            <span>Keluar dari Akun</span>
+          </button>
+        </div>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Camera, Upload, Trash2, Eye, EyeOff } from 'lucide-vue-next'
+import { Camera, Upload, Trash2, Eye, EyeOff, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useToastStore } from '~/stores/toast'
 import { ROLE_LABELS } from '~/config/access'
+
+async function handleLogout() {
+  await authStore.logout()
+}
 
 const showOldPassword = ref(false)
 const showNewPassword = ref(false)
@@ -640,7 +669,12 @@ const logoutWa = async () => {
 
 let pollInterval: any = null
 
-onMounted(() => {
+onMounted(async () => {
+  await authStore.fetchUser()
+  if (authStore.user) {
+    form.value.name = authStore.user.name || ''
+    form.value.phone = authStore.user.phone || ''
+  }
   fetchWaStatus()
   pollInterval = setInterval(fetchWaStatus, 3000)
 })

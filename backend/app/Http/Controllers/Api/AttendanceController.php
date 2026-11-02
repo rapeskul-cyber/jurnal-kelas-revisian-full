@@ -21,7 +21,14 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $date = $request->input('date', Carbon::today()->toDateString());
-        $classId = in_array($user->role, ['SEKRETARIS', 'SISWA', 'ORANG_TUA']) ? ($user->class_id ?: 1) : $request->input('class_id', $user->class_id ?? 1);
+        if ($user && in_array($user->role, ['SEKRETARIS', 'SISWA', 'ORANG_TUA'])) {
+            $classId = $user->class_id ?: 1;
+        } elseif ($user && $user->role === 'GURU_PEMBIMBING') {
+            $walasClassId = \App\Models\SchoolClass::where('advisor_id', $user->id)->value('id') ?? $user->class_id;
+            $classId = $walasClassId ?: 1;
+        } else {
+            $classId = $request->input('class_id', $user->class_id ?? 1);
+        }
 
         $session = AttendanceSession::where('class_id', $classId)
             ->whereDate('date', $date)
@@ -113,6 +120,8 @@ class AttendanceController extends Controller
                 'verification_status' => $session ? $session->verification_status : ($latestSession ? $latestSession->verification_status : 'BELUM_KONFIRMASI'),
                 'school_hours' => $session->school_hours ?? ($latestSession->school_hours ?? '07:30 - 15:30'),
                 'room' => $session->room ?? ($latestSession->room ?? 'Lab. 1'),
+                'class_id' => $classId,
+                'class_name' => \App\Models\SchoolClass::find($classId)->name ?? 'Kelas Industri',
             ],
             'summary' => [
                 'total' => $total,
@@ -326,8 +335,8 @@ class AttendanceController extends Controller
             'records' => 'required|array',
         ]);
 
-        if (!Hash::check($request->pin, $user->password) && $request->pin !== '123456' && $request->pin !== '1234') {
-            return response()->json(['message' => 'PIN / Password konfirmasi salah!'], 422);
+        if (!Hash::check($request->pin, $user->password)) {
+            return response()->json(['message' => 'PIN / Kata sandi akun Anda tidak valid!'], 422);
         }
 
         $session = AttendanceSession::where('class_id', $classId)
@@ -469,22 +478,26 @@ class AttendanceController extends Controller
             }
             if (!$child && $user->nip_nis) {
                 $child = User::where('nip_nis', $user->nip_nis)
-                    ->where('class_id', $user->class_id ?: 1)
-                    ->whereIn('role', ['SISWA', 'SEKRETARIS'])
-                    ->first()
-                    ?? User::where('nip_nis', $user->nip_nis)
-                        ->whereIn('role', ['SISWA', 'SEKRETARIS'])
-                        ->first();
-            }
-            if (!$child && $user->class_id) {
-                $child = User::where('class_id', $user->class_id)
                     ->whereIn('role', ['SISWA', 'SEKRETARIS'])
                     ->first();
             }
-            if ($child) {
-                $targetStudentId = $child->id;
-                $classId = $child->class_id ?: 1;
+            if (!$child) {
+                return response()->json([
+                    'summary' => [
+                        'hadir' => 0,
+                        'sakit' => 0,
+                        'izin' => 0,
+                        'alpha' => 0,
+                        'persentase_kehadiran' => 0,
+                        'total_hari_kbm' => 0,
+                    ],
+                    'weekly' => [],
+                    'details' => [],
+                    'message' => 'Akun Orang Tua ini belum terhubung ke data murid manapun.',
+                ]);
             }
+            $targetStudentId = $child->id;
+            $classId = $child->class_id ?: 1;
         }
 
         // Ambil semua session kelas pada bulan tersebut
@@ -683,6 +696,9 @@ class AttendanceController extends Controller
         $user = $request->user();
         if ($user && in_array($user->role, ['SEKRETARIS', 'SISWA', 'ORANG_TUA'])) {
             $classId = $user->class_id ?: 1;
+        } elseif ($user && $user->role === 'GURU_PEMBIMBING') {
+            $walasClassId = \App\Models\SchoolClass::where('advisor_id', $user->id)->value('id') ?? $user->class_id;
+            $classId = $walasClassId ?: 1;
         } else {
             $classId = $request->input('class_id', 1);
         }
@@ -716,15 +732,19 @@ class AttendanceController extends Controller
         }
 
         $totalHadirAll = 0;
+        $totalSakitAll = 0;
+        $totalIzinAll = 0;
         $totalAlphaAll = 0;
 
-        $rows = $students->map(function ($std) use ($sessionIds, $effectiveDays, &$totalHadirAll, &$totalAlphaAll) {
+        $rows = $students->map(function ($std) use ($sessionIds, $effectiveDays, &$totalHadirAll, &$totalSakitAll, &$totalIzinAll, &$totalAlphaAll) {
             $hadir = AttendanceRecord::where('student_id', $std->id)->whereIn('session_id', $sessionIds)->where('status', 'HADIR')->count();
             $sakit = AttendanceRecord::where('student_id', $std->id)->whereIn('session_id', $sessionIds)->where('status', 'SAKIT')->count();
             $izin = AttendanceRecord::where('student_id', $std->id)->whereIn('session_id', $sessionIds)->where('status', 'IZIN')->count();
             $alpha = AttendanceRecord::where('student_id', $std->id)->whereIn('session_id', $sessionIds)->where('status', 'ALPHA')->count();
 
             $totalHadirAll += $hadir;
+            $totalSakitAll += $sakit;
+            $totalIzinAll += $izin;
             $totalAlphaAll += $alpha;
 
             $totalRecorded = $hadir + $sakit + $izin + $alpha;

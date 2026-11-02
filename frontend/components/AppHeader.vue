@@ -1,34 +1,44 @@
 <template>
-  <header class="bg-white md:bg-transparent border-b md:border-b-0 border-gray-200 px-4 md:px-8 py-3 md:py-0 md:h-20 select-none sticky md:static top-0 z-30 shadow-2xs md:shadow-none flex items-center justify-between min-w-0 pt-safe">
-    <div class="flex items-center gap-3 min-w-0 flex-1">
+  <header class="bg-white md:bg-transparent border-b md:border-b-0 border-gray-200 px-3 sm:px-4 md:px-8 py-2.5 sm:py-3 md:py-0 md:h-20 select-none sticky md:static top-0 z-30 shadow-2xs md:shadow-none flex items-center justify-between min-w-0 pt-safe">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 mr-2 sm:mr-3">
       <button
         v-if="showBack"
         @click="handleBack"
         type="button"
-        class="flex items-center gap-1.5 px-3 py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 transition shadow-2xs shrink-0 cursor-pointer active:scale-95 min-h-[44px]"
+        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 transition shadow-2xs shrink-0 cursor-pointer active:scale-95 min-h-[40px] sm:min-h-[44px]"
       >
         <ArrowLeft class="w-4 h-4 md:w-5 md:h-5" />
         <span class="hidden sm:inline">Kembali</span>
       </button>
 
-      <div v-else class="md:hidden w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shrink-0 shadow-xs">
-        <Book class="w-5 h-5" />
+      <div v-else class="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-white shrink-0 shadow-xs">
+        <Book class="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
 
       <div class="min-w-0 flex-1">
-        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-gray-900 tracking-tight truncate leading-tight">{{ title }}</h2>
-        <p v-if="subtitle" class="text-xs md:text-sm text-gray-500 mt-0.5 truncate leading-normal">{{ subtitle }}</p>
+        <h2 class="text-xs sm:text-lg md:text-2xl font-bold text-gray-900 tracking-tight leading-snug line-clamp-2 sm:line-clamp-none sm:truncate" :title="title">{{ title }}</h2>
+        <p v-if="subtitle" class="hidden sm:block text-xs md:text-sm text-gray-500 mt-0.5 truncate leading-normal">{{ subtitle }}</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+    <div class="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 max-w-[65%] sm:max-w-none justify-end">
       <slot name="actions" />
+
+      <!-- Kritik & Saran Link (Desktop/Tablet) -->
+      <a
+        href="https://saran.rapiuw.ai.id"
+        target="_blank"
+        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg md:rounded-xl bg-blue-50 border border-blue-200 text-primary hover:bg-blue-100 text-xs font-semibold transition shadow-2xs"
+        title="Kirim kritik dan saran portal"
+      >
+        <span>Kritik dan Saran</span>
+      </a>
 
       <!-- Notification Bell -->
       <NuxtLink
         v-if="!hideNotifications"
         to="/notifikasi"
-        class="relative w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:border-gray-300 transition shadow-2xs min-h-[44px] min-w-[44px] active:scale-95"
+        class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:border-gray-300 transition shadow-2xs min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] active:scale-95 shrink-0"
         title="Pemberitahuan"
       >
         <Bell class="w-4 h-4 md:w-5 md:h-5" />
@@ -43,7 +53,7 @@
       <!-- Profile Avatar on Mobile -->
       <NuxtLink
         to="/profile"
-        class="md:hidden w-10 h-10 rounded-full bg-blue-100 text-primary font-bold flex items-center justify-center text-xs ring-1 ring-blue-200 transition shadow-2xs hover:ring-2 hover:ring-primary/20 overflow-hidden min-h-[44px] min-w-[44px] active:scale-95"
+        class="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-100 text-primary font-bold flex items-center justify-center text-xs ring-1 ring-blue-200 transition shadow-2xs hover:ring-2 hover:ring-primary/20 overflow-hidden min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] active:scale-95 shrink-0"
         title="Profil Saya"
       >
         <img
@@ -55,12 +65,13 @@
         <span v-else>{{ authStore.user?.name ? authStore.user.name.charAt(0).toUpperCase() : 'U' }}</span>
       </NuxtLink>
 
-      <!-- Logout Button -->
+      <!-- Logout Button (Desktop only, Original Style) -->
       <button
         v-if="!hideLogout"
         @click="handleLogout"
         type="button"
-        class="flex items-center gap-1.5 md:gap-2 px-3 py-2.5 bg-white border border-gray-200 hover:border-red-200 hover:text-primary rounded-xl text-xs font-semibold text-gray-700 transition shadow-2xs cursor-pointer min-h-[44px] active:scale-95"
+        class="hidden md:flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-3.5 md:py-2 bg-white border border-gray-200 hover:border-red-200 hover:text-primary rounded-lg md:rounded-xl text-xs font-semibold text-gray-700 transition shadow-2xs cursor-pointer min-h-[44px] active:scale-95 shrink-0"
+        title="Keluar dari Akun"
       >
         <LogOut class="w-4 h-4" />
         <span class="hidden sm:inline">Keluar</span>

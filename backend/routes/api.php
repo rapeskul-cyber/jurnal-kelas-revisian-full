@@ -13,9 +13,9 @@ use App\Http\Controllers\Api\SystemController;
 
 // Public Auth routes (Rate Limiter: Maksimal 5 percobaan per menit per IP)
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('/auth/forgot-password/step-1', [AuthController::class, 'forgotPasswordStep1'])->middleware('throttle:3,10');
-Route::post('/auth/forgot-password/step-2', [AuthController::class, 'forgotPasswordStep2']);
-Route::post('/auth/forgot-password/step-3', [AuthController::class, 'forgotPasswordStep3']);
+Route::post('/auth/forgot-password/step-1', [AuthController::class, 'forgotPasswordStep1'])->middleware('throttle:5,1');
+Route::post('/auth/forgot-password/step-2', [AuthController::class, 'forgotPasswordStep2'])->middleware('throttle:10,1');
+Route::post('/auth/forgot-password/step-3', [AuthController::class, 'forgotPasswordStep3'])->middleware('throttle:10,1');
 Route::get('/app/info', [SystemController::class, 'getPublicInfo']);
 
 // Public file routes

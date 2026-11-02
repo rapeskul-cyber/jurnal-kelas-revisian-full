@@ -22,20 +22,22 @@
         <button
           type="button"
           @click="switchMainTab('input')"
-          class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition min-h-[44px] cursor-pointer"
+          class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition min-h-[44px] cursor-pointer"
           :class="activeMainTab === 'input' ? 'bg-white text-primary shadow-xs' : 'text-gray-600 hover:text-gray-900'"
         >
-          <CalendarIcon class="w-4 h-4" />
-          <span>Jadwal & Input Materi Hari Ini</span>
+          <CalendarIcon class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline">Jadwal & Input Materi Hari Ini</span>
+          <span class="sm:hidden">Jadwal & Input</span>
         </button>
         <button
           type="button"
           @click="switchMainTab('monitoring')"
-          class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition min-h-[44px] cursor-pointer"
+          class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition min-h-[44px] cursor-pointer"
           :class="activeMainTab === 'monitoring' ? 'bg-white text-primary shadow-xs' : 'text-gray-600 hover:text-gray-900'"
         >
-          <BarChart2Icon class="w-4 h-4" />
-          <span>Monitoring & Rekap Kelas</span>
+          <BarChart2Icon class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline">Monitoring & Rekap Kelas</span>
+          <span class="sm:hidden">Monitoring</span>
         </button>
       </div>
 
@@ -211,7 +213,7 @@
                 </div>
 
                 <!-- Tombol Aksi -->
-                <div class="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end sm:justify-start pt-1 sm:pt-0">
                   <!-- Detail Jurnal -->
                   <button
                     type="button"

@@ -8,10 +8,11 @@
         <button
           @click="exportReport"
           type="button"
-          class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Ekspor Log Jurnal"
         >
-          <DownloadIcon class="w-3.5 h-3.5 text-gray-500" />
-          <span>Ekspor Log Jurnal</span>
+          <DownloadIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+          <span class="hidden sm:inline">Ekspor Log Jurnal</span>
         </button>
       </template>
     </AppHeader>

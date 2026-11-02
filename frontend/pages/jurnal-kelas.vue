@@ -9,10 +9,12 @@
           v-if="canCreateAgenda"
           @click="openAddModal"
           type="button"
-          class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer whitespace-nowrap active:scale-[0.99]"
+          class="px-2.5 sm:px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors text-xs font-bold flex items-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer whitespace-nowrap active:scale-[0.99] shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Isi Agenda KBM"
         >
-          <Plus class="w-4 h-4" />
-          <span>Isi Agenda KBM</span>
+          <Plus class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline">Isi Agenda KBM</span>
+          <span class="sm:hidden text-[11px] font-bold">Agenda</span>
         </button>
       </template>
     </AppHeader>
@@ -606,7 +608,13 @@ const authStore = useAuthStore()
 const toast = useToastStore()
 
 const filterDate = ref(getLocalTodayYMD())
-const selectedClassId = ref(authStore.user?.class_id ? String(authStore.user.class_id) : '1')
+const selectedClassId = ref(
+  authStore.user?.role === 'GURU_PEMBIMBING' && authStore.user?.guided_class?.id
+    ? String(authStore.user.guided_class.id)
+    : (authStore.user?.class_id
+        ? String(authStore.user.class_id)
+        : (authStore.user?.guided_class?.id ? String(authStore.user.guided_class.id) : ''))
+)
 const filterStatus = ref('ALL')
 const searchQuery = ref('')
 const loading = ref(false)
@@ -664,15 +672,20 @@ const agendaForm = reactive({
 })
 
 const isClassLocked = computed(() => {
-  return ['SEKRETARIS', 'SISWA'].includes(authStore.user?.role || '')
+  if (['SEKRETARIS', 'SISWA'].includes(authStore.user?.role || '')) return true
+  if (authStore.user?.role === 'GURU_PEMBIMBING' && (authStore.user?.guided_class?.id || authStore.user?.class_id)) return true
+  return false
 })
 
 const currentClassName = computed(() => {
-  if (isClassLocked.value) {
-    return authStore.user?.school_class?.name || authStore.user?.class_name || 'Kelas Industri RPL'
+  if (authStore.user?.role === 'GURU_PEMBIMBING') {
+    return authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Binaan'
+  }
+  if (['SEKRETARIS', 'SISWA'].includes(authStore.user?.role || '')) {
+    return authStore.user?.school_class?.name || authStore.user?.guided_class?.name || authStore.user?.class_name || 'Kelas Anda'
   }
   const found = availableClasses.value.find(c => String(c.id) === String(selectedClassId.value))
-  return found ? found.name : (authStore.user?.school_class?.name || 'Kelas Industri RPL')
+  return found ? found.name : (authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Pilih Kelas')
 })
 
 const canCreateAgenda = computed(() => {

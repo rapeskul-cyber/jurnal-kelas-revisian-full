@@ -132,12 +132,10 @@
                   <span
                     class="px-2.5 py-0.5 rounded-md text-[10px] font-bold shrink-0"
                     :class="{
-                      'bg-blue-50 text-primary border border-blue-200': u.role === 'SUPERADMIN',
-                      'bg-blue-100 text-primary border border-blue-200': u.role === 'GURU_PEMBIMBING',
-                      'bg-blue-50 text-blue-700 border border-blue-200': u.role === 'GURU_PENGAJAR',
-                      'bg-sky-50 text-sky-700 border border-sky-200': u.role === 'SEKRETARIS',
-                      'bg-sky-50 text-sky-600 border border-sky-100': u.role === 'SISWA',
-                      'bg-amber-50 text-amber-800 border border-amber-200': u.role === 'ORANG_TUA',
+                      'bg-indigo-50 text-indigo-700 border border-indigo-200': u.role === 'SUPERADMIN',
+                      'bg-blue-50 text-blue-700 border border-blue-200': u.role === 'GURU_PEMBIMBING' || u.role === 'GURU_PENGAJAR',
+                      'bg-slate-100 text-slate-700 border border-slate-200': u.role === 'SEKRETARIS' || u.role === 'SISWA',
+                      'bg-amber-50 text-amber-700 border border-amber-200': u.role === 'ORANG_TUA',
                     }"
                   >
                     {{ formatRoleLabel(u.role) }}
@@ -271,12 +269,10 @@
                     <span
                       class="px-2.5 py-0.5 rounded-md text-[10px] font-bold"
                       :class="{
-                        'bg-blue-50 text-primary border border-blue-200': u.role === 'SUPERADMIN',
-                        'bg-blue-100 text-primary border border-blue-200': u.role === 'GURU_PEMBIMBING',
-                        'bg-blue-50 text-blue-700 border border-blue-200': u.role === 'GURU_PENGAJAR',
-                        'bg-sky-50 text-sky-700 border border-sky-200': u.role === 'SEKRETARIS',
-                        'bg-sky-50 text-sky-600 border border-sky-100': u.role === 'SISWA',
-                        'bg-amber-50 text-amber-800 border border-amber-200': u.role === 'ORANG_TUA',
+                        'bg-indigo-50 text-indigo-700 border border-indigo-200': u.role === 'SUPERADMIN',
+                        'bg-blue-50 text-blue-700 border border-blue-200': u.role === 'GURU_PEMBIMBING' || u.role === 'GURU_PENGAJAR',
+                        'bg-slate-100 text-slate-700 border border-slate-200': u.role === 'SEKRETARIS' || u.role === 'SISWA',
+                        'bg-amber-50 text-amber-700 border border-amber-200': u.role === 'ORANG_TUA',
                       }"
                     >
                       {{ formatRoleLabel(u.role) }}
@@ -391,7 +387,6 @@
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
                   required
                 >
-                  <option v-if="authStore.user?.role === 'SUPERADMIN'" value="SUPERADMIN">Super Administrator (Akses Penuh)</option>
                   <option value="GURU_PEMBIMBING">Wali Kelas</option>
                   <option value="GURU_PENGAJAR">Guru Pengajar</option>
                   <option value="SEKRETARIS">Sekretaris Kelas</option>
@@ -425,12 +420,14 @@
               <!-- Nomor Identitas (NIP / NISN) -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1">
-                  Nomor Identitas (NIP / NISN)
+                  Nomor Identitas {{ (newUser.role === 'SISWA' || newUser.role === 'SEKRETARIS') ? '(NIS - Khusus Angka)' : '(NIP / Identitas)' }}
                 </label>
                 <input
                   v-model="newUser.nip_nis"
                   type="text"
-                  placeholder="Masukkan nomor identifikasi resmi"
+                  :inputmode="(newUser.role === 'SISWA' || newUser.role === 'SEKRETARIS') ? 'numeric' : 'text'"
+                  @input="handleNisInput(newUser)"
+                  :placeholder="(newUser.role === 'SISWA' || newUser.role === 'SEKRETARIS') ? 'Contoh: 102402 (Hanya angka)' : 'Masukkan nomor identifikasi resmi'"
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -444,7 +441,7 @@
                   v-model="newUser.class_id"
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
                 >
-                  <option v-for="c in (classesList.length ? classesList : defaultClassesList)" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+                  <option v-for="c in classesList" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
                   <option value="">- (Tidak Terikat Kelas)</option>
                 </select>
               </div>
@@ -543,7 +540,7 @@
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
                   required
                 >
-                  <option v-if="authStore.user?.role === 'SUPERADMIN'" value="SUPERADMIN">Super Administrator (Akses Penuh)</option>
+                  <option v-if="editUser.role === 'SUPERADMIN'" value="SUPERADMIN">Super Administrator (Akses Penuh)</option>
                   <option value="GURU_PEMBIMBING">Wali Kelas</option>
                   <option value="GURU_PENGAJAR">Guru Pengajar</option>
                   <option value="SEKRETARIS">Sekretaris Kelas</option>
@@ -577,12 +574,14 @@
               <!-- Nomor Identitas (NIP / NISN) -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1">
-                  Nomor Identitas (NIP / NISN)
+                  Nomor Identitas {{ (editUser.role === 'SISWA' || editUser.role === 'SEKRETARIS') ? '(NIS - Khusus Angka)' : '(NIP / Identitas)' }}
                 </label>
                 <input
                   v-model="editUser.nip_nis"
                   type="text"
-                  placeholder="Masukkan nomor identifikasi resmi"
+                  :inputmode="(editUser.role === 'SISWA' || editUser.role === 'SEKRETARIS') ? 'numeric' : 'text'"
+                  @input="handleNisInput(editUser)"
+                  :placeholder="(editUser.role === 'SISWA' || editUser.role === 'SEKRETARIS') ? 'Contoh: 102402 (Hanya angka)' : 'Masukkan nomor identifikasi resmi'"
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -596,7 +595,7 @@
                   v-model="editUser.class_id"
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
                 >
-                  <option v-for="c in (classesList.length ? classesList : defaultClassesList)" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+                  <option v-for="c in classesList" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
                   <option value="">- (Tidak Terikat Kelas)</option>
                 </select>
               </div>
@@ -811,26 +810,6 @@ const roleFilter = ref('Semua Peran')
 
 const studentsList = ref<any[]>([])
 const classesList = ref<any[]>([])
-const defaultClassesList = [
-  { id: 1, name: 'Kelas Industri RPL' },
-  { id: 2, name: 'XI RPL 2 (Rekayasa Perangkat Lunak 2)' },
-  { id: 3, name: 'XII RPL 1 (Rekayasa Perangkat Lunak 1)' },
-  { id: 4, name: 'XII RPL 2 (Rekayasa Perangkat Lunak 2)' },
-]
-
-const defaultMockUsers = computed(() => [
-  {
-    id: authStore.user?.id || 1,
-    name: authStore.user?.name || 'Siti Aminah, M.Pd',
-    nip_nis: authStore.user?.nip_nis || '19890314002',
-    role: authStore.user?.role || 'GURU_PEMBIMBING',
-    class_name: '-'
-  },
-  { id: 101, name: 'Budi Santoso, S.Pd', nip_nis: '19840212001', role: 'GURU_PENGAJAR', class_name: '-' },
-  { id: 102, name: 'Rina Safitri', nip_nis: '102401', role: 'SEKRETARIS', class_name: 'Kelas Industri RPL' },
-  { id: 103, name: 'Ahmad Fadillah', nip_nis: '102402', role: 'SISWA', class_name: 'Kelas Industri RPL' },
-  { id: 104, name: 'Hendra Wijaya', nip_nis: '102403', role: 'SISWA', class_name: 'XI RPL 2' }
-])
 
 const users = ref<any[]>([])
 
@@ -920,8 +899,17 @@ function onStudentSelectForNewUser() {
   }
 }
 
+function handleNisInput(target: any) {
+  if (target.role === 'SISWA' || target.role === 'SEKRETARIS') {
+    target.nip_nis = (target.nip_nis || '').replace(/\D/g, '')
+  }
+}
+
 function onStudentSelectForEditUser() {
-  if (!editUser.value.student_id) return
+  if (!editUser.value.student_id) {
+    editUser.value.nip_nis = ''
+    return
+  }
   const found = studentsList.value.find((s: any) => String(s.id) === String(editUser.value.student_id))
   if (found) {
     if (found.class_id) editUser.value.class_id = String(found.class_id)
@@ -1041,6 +1029,9 @@ const submitUpdateUser = async () => {
     toast.success(res?.message || 'Data pengguna berhasil diperbarui.')
     successMsg.value = `Data pengguna "${editUser.value.name}" berhasil diperbarui!`
     showEditDrawer.value = false
+    if (editUser.value.id === authStore.user?.id) {
+      await authStore.fetchUser()
+    }
     await fetchUsers()
   } catch (err: any) {
     toast.error(err?.data?.message || 'Gagal memperbarui data pengguna.')

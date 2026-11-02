@@ -54,8 +54,8 @@
           </div>
         </div>
 
-        <!-- Point 2: Cloudflare Turnstile Anti-Bot Widget (Invisible) -->
-        <div v-if="turnstileSiteKey" class="turnstile-invisible-wrapper" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; width: 0; height: 0; overflow: hidden;">
+        <!-- Point 2: Cloudflare Turnstile Anti-Bot Widget (Visible) -->
+        <div v-show="turnstileSiteKey" class="flex justify-center my-2 min-h-[65px]">
           <div ref="turnstileContainer" id="turnstile-widget"></div>
         </div>
 
@@ -126,9 +126,10 @@ function renderTurnstile() {
     try {
       turnstileWidgetId.value = win.turnstile.render(turnstileContainer.value, {
         sitekey: turnstileSiteKey.value,
-        size: 'invisible',
+        theme: 'light',
         callback: (token: string) => {
           turnstileToken.value = token
+          errorMessage.value = ''
         },
         'expired-callback': () => {
           turnstileToken.value = ''
@@ -154,8 +155,8 @@ onMounted(() => {
         renderTurnstile()
         clearInterval(interval)
       }
-    }, 250)
-    setTimeout(() => clearInterval(interval), 6000)
+    }, 200)
+    setTimeout(() => clearInterval(interval), 10000)
   }
 })
 
@@ -163,20 +164,24 @@ async function handleLogin() {
   errorMessage.value = ''
   isLoading.value = true
   try {
-    // If Turnstile is active but token is not yet ready, attempt execute
+    // If Turnstile is active but token is not yet ready, attempt execute / wait
     if (turnstileSiteKey.value && !turnstileToken.value && typeof window !== 'undefined') {
       const win = window as any
       if (win.turnstile && turnstileWidgetId.value) {
         try {
           win.turnstile.execute(turnstileWidgetId.value)
-          let waitCycles = 0
-          while (!turnstileToken.value && waitCycles < 15) {
-            await new Promise((r) => setTimeout(r, 100))
-            waitCycles++
-          }
-        } catch (e) {
-          console.warn('Turnstile execution note:', e)
-        }
+        } catch (e) {}
+      }
+      let waitCycles = 0
+      while (!turnstileToken.value && waitCycles < 40) {
+        await new Promise((r) => setTimeout(r, 100))
+        waitCycles++
+      }
+
+      if (!turnstileToken.value) {
+        errorMessage.value = 'Mohon selesaikan verifikasi keamanan anti-bot (Cloudflare Turnstile) di atas sebelum masuk.'
+        isLoading.value = false
+        return
       }
     }
 

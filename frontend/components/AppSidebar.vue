@@ -1,7 +1,7 @@
 <template>
-  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between h-screen fixed left-0 top-0 z-30 transition-all select-none">
+  <aside class="w-72 bg-white border-r border-gray-200 flex flex-col justify-between h-screen fixed left-0 top-0 z-30 transition-all select-none">
     <!-- Top Section -->
-    <div class="p-6">
+    <div class="px-4 py-6">
       <!-- Logo Header -->
       <div class="flex items-center gap-3 mb-8">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
@@ -49,7 +49,7 @@
           ]"
         >
           <component :is="resolveIcon(item.icon)" class="w-5 h-5 flex-shrink-0" :class="isActive(item.to) ? 'text-primary' : 'text-gray-400'" />
-          <span class="truncate">{{ item.name }}</span>
+          <span class="truncate text-[13px] font-medium leading-snug">{{ item.name }}</span>
         </NuxtLink>
       </nav>
     </div>
@@ -120,7 +120,8 @@ const userSubtitle = computed(() => {
     return authStore.user.school_class?.name ? `Sekretaris ${authStore.user.school_class.name}` : 'Sekretaris'
   }
   if (authStore.user?.role === 'GURU_PEMBIMBING') {
-    return authStore.user.school_class?.name ? `Wali Kelas ${authStore.user.school_class.name}` : 'Wali Kelas'
+    const cName = authStore.user.guided_class?.name || authStore.user.school_class?.name
+    return cName ? `Wali Kelas ${cName}` : 'Wali Kelas'
   }
   if (authStore.user?.role === 'ORANG_TUA') {
     return authStore.user.specialization || 'Orang Tua / Wali Murid'

@@ -2,7 +2,7 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Monitoring & Rekap Presensi Mandiri Kelas"
-      :subtitle="dateFormatted + ' • ' + (authStore.user?.school_class?.name || '-')"
+      :subtitle="dateFormatted + ' • ' + displayClassName"
     />
 
     <main class="px-4 sm:px-8 pb-8 space-y-5">
@@ -40,12 +40,12 @@
 
       <!-- Action Bar: Tandai Semua Hadir, Refresh & Search -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             @click="markAllPresent"
             :disabled="isLoading || students.length === 0"
-            class="px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-[0.99] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition"
+            class="flex-1 sm:flex-initial px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-[0.99] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition min-h-[44px]"
           >
             <Check class="w-4 h-4" />
             <span>Tandai Semua Hadir</span>
@@ -55,7 +55,7 @@
             type="button"
             @click="() => loadAttendance(false)"
             :disabled="isRefreshing"
-            class="p-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            class="p-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs min-h-[44px] min-w-[44px] shrink-0"
             title="Segarkan data presensi"
           >
             <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin text-primary': isRefreshing }" />
@@ -69,7 +69,7 @@
             v-model="searchQuery"
             type="text"
             placeholder="Cari nama siswa..."
-            class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs"
+            class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs min-h-[44px]"
           />
         </div>
       </div>
@@ -305,8 +305,8 @@
           </div>
         </div>
 
-        <!-- Verification Panel (1 col) -->
-        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-6 h-fit">
+        <!-- Verification Panel (1 col, Sticky floating) -->
+        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-6 h-fit sticky top-6 self-start">
           <h3 class="text-sm font-bold text-gray-900 pb-3 border-b border-gray-100">Verifikasi Status</h3>
 
           <div class="space-y-3 text-xs">
@@ -438,8 +438,18 @@ function formatReadableDate(dateStr: string) {
   }
 }
 
+const sessionClassName = ref('')
+
 const targetClassId = computed(() => {
-  return (route.query.class_id as string) || (authStore.user?.class_id ? String(authStore.user.class_id) : '1')
+  if (route.query.class_id) return String(route.query.class_id)
+  if (authStore.user?.role === 'GURU_PEMBIMBING' && authStore.user?.guided_class?.id) {
+    return String(authStore.user.guided_class.id)
+  }
+  return authStore.user?.class_id ? String(authStore.user.class_id) : '1'
+})
+
+const displayClassName = computed(() => {
+  return sessionClassName.value || authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Industri'
 })
 
 const targetDate = computed(() => {
@@ -465,7 +475,7 @@ const students = ref<any[]>([])
 // 1. HIDRASI INSTAN DARI CACHE LOKAL (0ms DELAY)
 if (process.client) {
   try {
-    const cached = localStorage.getItem(`cache_presensi_class_${authStore.user?.class_id || 1}`)
+    const cached = localStorage.getItem(`cache_presensi_class_${targetClassId.value}`)
     if (cached) {
       const parsed = JSON.parse(cached)
       if (parsed.students && Array.isArray(parsed.students) && parsed.students.length > 0) {
@@ -560,6 +570,9 @@ async function loadAttendance(silent = false) {
     if (res.session) {
       sessionStatus.value = res.session.status || 'DRAFT'
       verificationStatus.value = res.session.verification_status || 'BELUM_KONFIRMASI'
+      if (res.session.class_name) {
+        sessionClassName.value = res.session.class_name
+      }
       if (res.session.date) {
         dateFormatted.value = formatReadableDate(res.session.date)
       }

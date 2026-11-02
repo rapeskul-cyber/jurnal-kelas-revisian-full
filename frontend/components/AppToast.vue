@@ -3,7 +3,7 @@
     <div
       aria-live="polite"
       aria-atomic="false"
-      class="fixed bottom-5 right-4 sm:right-6 z-[9999] flex flex-col gap-2.5 pointer-events-none"
+      class="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[9999] flex flex-col gap-2.5 pointer-events-none"
       style="max-width: 360px; width: calc(100vw - 32px);"
     >
       <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2.5">

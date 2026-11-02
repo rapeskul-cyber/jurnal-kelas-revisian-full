@@ -147,6 +147,21 @@ class UserController extends Controller
             ]);
         }
 
+        if ($request->role === 'SUPERADMIN') {
+            $superadminCount = User::where('role', 'SUPERADMIN')->count();
+            if ($superadminCount >= 1) {
+                return response()->json(['message' => 'Superadmin dibatasi maksimal hanya 1 akun di dalam sistem!'], 422);
+            }
+        }
+
+        if (in_array($request->role, ['SISWA', 'SEKRETARIS']) && $request->filled('nip_nis')) {
+            $cleanNis = preg_replace('/\D/', '', $request->nip_nis);
+            if (empty($cleanNis)) {
+                return response()->json(['message' => 'NIS hanya boleh berupa angka!'], 422);
+            }
+            $request->merge(['nip_nis' => $cleanNis]);
+        }
+
         // SUPERADMIN
         $request->validate([
             'name' => 'required|string|max:255',
@@ -427,6 +442,36 @@ class UserController extends Controller
             ]);
         }
 
+        if ($request->has('disconnect_parent') && $request->boolean('disconnect_parent')) {
+            $parent = User::where('role', 'ORANG_TUA')
+                ->where(function($q) use ($user) {
+                    $q->where('student_id', $user->id)
+                      ->orWhere('nip_nis', $user->nip_nis);
+                })->first();
+            if ($parent) {
+                $parent->update([
+                    'student_id' => null,
+                    'nip_nis' => null,
+                    'specialization' => null,
+                ]);
+            }
+        }
+
+        if ($request->filled('role') && $request->role === 'SUPERADMIN' && $user->role !== 'SUPERADMIN') {
+            $superadminCount = User::where('role', 'SUPERADMIN')->count();
+            if ($superadminCount >= 1) {
+                return response()->json(['message' => 'Superadmin dibatasi maksimal hanya 1 akun di dalam sistem!'], 422);
+            }
+        }
+
+        if (in_array($request->input('role', $user->role), ['SISWA', 'SEKRETARIS']) && $request->filled('nip_nis')) {
+            $cleanNis = preg_replace('/\D/', '', $request->nip_nis);
+            if (empty($cleanNis)) {
+                return response()->json(['message' => 'NIS hanya boleh berupa angka!'], 422);
+            }
+            $request->merge(['nip_nis' => $cleanNis]);
+        }
+
         // SUPERADMIN
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -446,9 +491,14 @@ class UserController extends Controller
         if ($targetRole === 'ORANG_TUA' && $request->has('student_id')) {
             $student = $request->student_id ? User::find($request->student_id) : null;
             if ($student) {
+                $updateData['student_id'] = $student->id;
                 $updateData['class_id'] = $student->class_id ?: $user->class_id;
                 $updateData['nip_nis'] = $student->nip_nis ?: $user->nip_nis;
                 $updateData['specialization'] = "Wali Murid: {$student->name}";
+            } else {
+                $updateData['student_id'] = null;
+                $updateData['nip_nis'] = null;
+                $updateData['specialization'] = null;
             }
         }
 
@@ -483,6 +533,10 @@ class UserController extends Controller
 
         if ($currentUser->id == $id) {
             return response()->json(['message' => 'Tidak dapat menghapus akun Anda sendiri.'], 422);
+        }
+
+        if ($user->role === 'SUPERADMIN') {
+            return response()->json(['message' => 'Akun Superadmin utama tidak dapat dihapus.'], 422);
         }
 
         $user = User::findOrFail($id);

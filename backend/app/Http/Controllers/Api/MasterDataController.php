@@ -20,12 +20,21 @@ class MasterDataController extends Controller
         }
     }
 
+    private function checkStaff(Request $request)
+    {
+        if (!in_array($request->user()->role, ['SUPERADMIN', 'GURU_PEMBIMBING', 'GURU_PENGAJAR'])) {
+            abort(response()->json(['message' => 'Hanya Guru dan Administrator yang berhak mengakses data ini.'], 403));
+        }
+    }
+
     // ==========================================
     // 1. CLASSES (ROMBEL)
     // ==========================================
 
     public function getClasses(Request $request)
     {
+        $this->checkStaff($request);
+
         $query = SchoolClass::with(['advisor', 'secretary'])
             ->withCount(['students', 'schedules'])
             ->orderBy('name');
@@ -176,6 +185,8 @@ class MasterDataController extends Controller
 
     public function getSubjects(Request $request)
     {
+        $this->checkStaff($request);
+
         $query = Subject::with(['teacher'])
             ->withCount('schedules')
             ->orderBy('name');
@@ -269,6 +280,8 @@ class MasterDataController extends Controller
 
     public function getSchedules(Request $request)
     {
+        $this->checkStaff($request);
+
         $classId = $request->input('class_id');
         $major = $request->input('major');
 
@@ -373,8 +386,10 @@ class MasterDataController extends Controller
     // 4. TERMS (SEMESTER & TAHUN AJARAN)
     // ==========================================
 
-    public function getTerms()
+    public function getTerms(Request $request)
     {
+        $this->checkStaff($request);
+
         return response()->json(Term::orderBy('start_date', 'desc')->get());
     }
 

@@ -2,16 +2,17 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Persetujuan Surat Izin Belajar"
-      subtitle="Daftar permohonan absen siswa yang membutuhkan verifikasi Anda"
+      :subtitle="pageSubtitle"
     >
       <template #actions>
         <button
           @click="fetchLeaves"
           type="button"
-          class="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          class="px-2.5 sm:px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Segarkan Data"
         >
-          <RefreshCwIcon class="w-3.5 h-3.5 text-gray-500" />
-          <span>Segarkan Data</span>
+          <RefreshCwIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+          <span class="hidden sm:inline">Segarkan Data</span>
         </button>
       </template>
     </AppHeader>
@@ -51,7 +52,7 @@
             <div
               v-for="item in allLeaves"
               :key="item.id"
-              @click="selectedItem = item"
+              @click="selectItem(item)"
               class="p-3.5 rounded-xl border cursor-pointer transition text-left space-y-2"
               :class="[
                 selectedItem?.id === item.id
@@ -77,7 +78,7 @@
       </div>
 
       <!-- Kolom Kanan: Detail & Aksi Persetujuan -->
-      <div class="lg:col-span-7">
+      <div id="leaveDetailSection" class="lg:col-span-7 scroll-mt-20">
         <div v-if="selectedItem" class="bg-white rounded-2xl border border-gray-100 shadow-card p-5 md:p-6 space-y-5">
           <!-- Header Detail -->
           <div class="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -258,6 +259,13 @@ const selectedItem = ref<any | null>(null)
 const reviewNote = ref('')
 const successMsg = ref('')
 
+const pageSubtitle = computed(() => {
+  const cName = authStore.user?.guided_class?.name || authStore.user?.school_class?.name
+  return cName
+    ? `Daftar permohonan absen siswa Kelas ${cName} yang membutuhkan verifikasi Anda`
+    : 'Daftar permohonan absen siswa yang membutuhkan verifikasi Anda'
+})
+
 const pendingLeaves = computed(() => {
   return allLeaves.value.filter(l => l.status === 'PENDING')
 })
@@ -269,15 +277,26 @@ const fetchLeaves = async () => {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     allLeaves.value = res || []
+    const firstPending = allLeaves.value.find(l => l.status === 'PENDING')
     if (allLeaves.value.length > 0 && !selectedItem.value) {
-      selectedItem.value = allLeaves.value[0]
+      selectedItem.value = firstPending || allLeaves.value[0]
     } else if (selectedItem.value) {
-      selectedItem.value = allLeaves.value.find(l => l.id === selectedItem.value.id) || allLeaves.value[0]
+      selectedItem.value = allLeaves.value.find(l => l.id === selectedItem.value.id) || firstPending || allLeaves.value[0]
     }
   } catch (err: any) {
     console.error('Error fetching leave requests:', err)
   } finally {
     loading.value = false
+  }
+}
+
+function selectItem(item: any) {
+  selectedItem.value = item
+  if (import.meta.client && window.innerWidth < 1024) {
+    const el = document.getElementById('leaveDetailSection')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 }
 

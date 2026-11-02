@@ -8,18 +8,20 @@
         <button
           @click="exportExcel"
           type="button"
-          class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Ekspor Excel"
         >
-          <FileSpreadsheetIcon class="w-3.5 h-3.5 text-green-600" />
+          <FileSpreadsheetIcon class="w-3.5 h-3.5 text-green-600 shrink-0" />
           <span class="hidden sm:inline">Ekspor Excel</span>
         </button>
         <button
           @click="printPdf"
           type="button"
-          class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0 min-h-[36px] sm:min-h-[40px]"
+          title="Cetak PDF"
         >
-          <PrinterIcon class="w-3.5 h-3.5" />
-          <span>Cetak PDF</span>
+          <PrinterIcon class="w-3.5 h-3.5 shrink-0" />
+          <span class="hidden sm:inline">Cetak PDF</span>
         </button>
       </template>
     </AppHeader>
@@ -41,12 +43,21 @@
             <option value="2025-1">2025/2026 - Ganjil</option>
           </select>
         </div>
-        <div>
+        <!-- Selector Kelas: Terkunci Otomatis untuk Wali Kelas (GURU_PEMBIMBING), Pilihan untuk Guru Pengajar / Superadmin -->
+        <div v-if="isClassLocked">
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Kelas Binaan</label>
+          <div class="px-3.5 py-2 rounded-xl bg-blue-50/70 border border-blue-200 text-xs font-semibold text-primary shadow-2xs flex items-center gap-1.5 whitespace-nowrap min-h-[38px]">
+            <span class="w-2 h-2 rounded-full bg-primary"></span>
+            <span>Kelas: {{ currentClassName }}</span>
+            <span class="text-[10px] text-blue-600/80 font-normal ml-0.5">(Auto-Detect)</span>
+          </div>
+        </div>
+        <div v-else>
           <label class="block text-[11px] font-semibold text-gray-500 mb-1">Pilih Kelas</label>
           <select
             v-model="filterClass"
             @change="fetchData"
-            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
+            class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer min-h-[38px]"
           >
             <option v-for="cls in classOptions" :key="cls.id" :value="String(cls.id)">
               {{ cls.name }}
@@ -357,7 +368,26 @@ const authStore = useAuthStore()
 const toast = useToastStore()
 
 const filterTerm = ref('2026-1')
-const filterClass = ref('1')
+const filterClass = ref(
+  authStore.user?.role === 'GURU_PEMBIMBING' && authStore.user?.guided_class?.id
+    ? String(authStore.user.guided_class.id)
+    : (authStore.user?.class_id
+        ? String(authStore.user.class_id)
+        : (authStore.user?.guided_class?.id ? String(authStore.user.guided_class.id) : ''))
+)
+
+const isClassLocked = computed(() => {
+  if (['SEKRETARIS', 'SISWA'].includes(authStore.user?.role || '')) return true
+  if (authStore.user?.role === 'GURU_PEMBIMBING' && (authStore.user?.guided_class?.id || authStore.user?.class_id)) return true
+  return false
+})
+
+const currentClassName = computed(() => {
+  if (authStore.user?.role === 'GURU_PEMBIMBING') {
+    return authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Binaan'
+  }
+  return authStore.user?.school_class?.name || authStore.user?.guided_class?.name || 'Kelas Anda'
+})
 const searchQuery = ref('')
 const loading = ref(false)
 const chartType = ref<'bar' | 'pie'>('bar')
@@ -437,8 +467,8 @@ const exportExcel = () => {
   const headers = ['No', 'Nama Siswa', 'NIS / NISN', 'Hadir', 'Sakit', 'Izin', 'ALFA', 'Persentase']
   const rows = filteredStudents.value.map((s, idx) => [
     idx + 1,
-    `"${s.name}"`,
-    `"${s.nis}"`,
+    `"${(s.name || '').replace(/"/g, '""')}"`,
+    `"${(s.nis || '').replace(/"/g, '""')}"`,
     s.hadir,
     s.sakit,
     s.izin,
@@ -446,26 +476,23 @@ const exportExcel = () => {
     `"${s.percentage}"`
   ])
 
-  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-  const encodedUri = encodeURI(csvContent)
+  const csvRows = ['sep=;', headers.join(';'), ...rows.map(e => e.join(';'))].join('\r\n')
+  const blob = new Blob(['\uFEFF' + csvRows], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.setAttribute('href', encodedUri)
+  link.setAttribute('href', url)
   link.setAttribute('download', `rekap_presensi_semester_${filterTerm.value}_kelas_${filterClass.value}.csv`)
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 const printPdf = () => {
   window.print()
 }
 
-const classOptions = ref<any[]>([
-  { id: 1, name: 'Kelas Industri RPL' },
-  { id: 12, name: 'XI RPL 1' },
-  { id: 13, name: 'XI RPL 2' },
-  { id: 18, name: 'XII RPL 1' }
-])
+const classOptions = ref<any[]>([])
 
 const fetchClasses = async () => {
   try {
@@ -474,7 +501,10 @@ const fetchClasses = async () => {
     })
     if (Array.isArray(res) && res.length > 0) {
       classOptions.value = res
-      if (!classOptions.value.some(c => String(c.id) === String(filterClass.value))) {
+      const myClassId = authStore.user?.class_id || authStore.user?.guided_class?.id
+      if (authStore.user?.role === 'GURU_PEMBIMBING' && myClassId) {
+        filterClass.value = String(myClassId)
+      } else if (!classOptions.value.some(c => String(c.id) === String(filterClass.value))) {
         filterClass.value = String(res[0].id)
       }
     }
@@ -484,7 +514,12 @@ const fetchClasses = async () => {
 }
 
 onMounted(async () => {
-  await fetchClasses()
+  if (!isClassLocked.value) {
+    await fetchClasses()
+  } else {
+    const myClassId = authStore.user?.guided_class?.id || authStore.user?.class_id
+    if (myClassId) filterClass.value = String(myClassId)
+  }
   fetchData()
 })
 </script>
