@@ -406,6 +406,26 @@
               <Check class="w-4 h-4 text-emerald-600" />
               <span>Presensi harian telah disahkan resmi oleh Wali Kelas.</span>
             </div>
+
+            <!-- Hak Prioritas Walas: Koreksi & Kunci Ulang Kapan Saja -->
+            <div class="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-primary">
+                <CheckCircle2 class="w-4 h-4 text-primary shrink-0" />
+                <span>Hak Prioritas Wali Kelas</span>
+              </div>
+              <p class="text-[11px] text-gray-600 leading-relaxed">
+                Jika ada siswa yang memberi info sakit/izin melebihi batas waktu, Wali Kelas berhak mengoreksi data kehadiran dan langsung mengunci ulang presensi kelas binaannya.
+              </p>
+              <button
+                type="button"
+                @click="handleWalasOverrideSave"
+                :disabled="isSubmitting"
+                class="w-full py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Save class="w-3.5 h-3.5" />
+                <span>Simpan Koreksi & Kunci Walas</span>
+              </button>
+            </div>
           </div>
 
           <!-- Notice untuk Guru Pengajar: Diarahkan ke Jurnal KBM -->
@@ -476,6 +496,8 @@
 <script setup lang="ts">
 import {
   Check,
+  CheckCircle2,
+  Save,
   Search,
   Lock,
   RefreshCw,
@@ -916,6 +938,49 @@ async function handleConfirmTeacher() {
   } catch (e: any) {
     toastError.value = true
     toastMessage.value = e?.data?.message || 'Gagal mengesahkan presensi.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function handleWalasOverrideSave() {
+  isSubmitting.value = true
+  toastMessage.value = ''
+  toastError.value = false
+  const token = getAuthToken()
+  try {
+    // 1. Simpan perubahan rekap kehadiran (draft / override)
+    await $fetch(`${authStore.apiBase}/attendance/draft`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        class_id: Number(targetClassId.value) || 1,
+        date: targetDate.value,
+        records: attendanceList.value.map(s => ({
+          student_id: s.id,
+          status: s.status,
+          notes: s.notes || null,
+        })),
+      }
+    })
+
+    // 2. Sahkan dan kunci presensi kelas oleh Walas
+    const res: any = await $fetch(`${authStore.apiBase}/attendance/confirm`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        class_id: Number(targetClassId.value) || 1,
+        date: targetDate.value,
+      }
+    })
+
+    toastMessage.value = res?.message || 'Koreksi presensi berhasil disimpan dan dikunci resmi oleh Wali Kelas!'
+    verificationStatus.value = 'TERVERIFIKASI'
+    sessionStatus.value = 'LOCKED'
+    await loadAttendance(true)
+  } catch (e: any) {
+    toastError.value = true
+    toastMessage.value = e?.data?.message || 'Gagal menyimpan koreksi dan mengunci presensi.'
   } finally {
     isSubmitting.value = false
   }

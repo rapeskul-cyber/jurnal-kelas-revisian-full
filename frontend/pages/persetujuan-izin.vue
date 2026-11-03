@@ -40,17 +40,35 @@
             </span>
           </div>
 
+          <!-- Filter Tanggal Harian Sesuai Revisi -->
+          <div class="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-xl border border-gray-150 text-xs">
+            <span class="text-[11px] font-semibold text-gray-400 shrink-0">Filter Tgl:</span>
+            <input
+              type="date"
+              v-model="filterDate"
+              class="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <button
+              v-if="filterDate"
+              type="button"
+              @click="filterDate = ''"
+              class="text-xs text-primary font-semibold hover:underline shrink-0 cursor-pointer"
+            >
+              Reset
+            </button>
+          </div>
+
           <div v-if="loading" class="py-12 text-center text-gray-400 text-xs">
             Memuat daftar permohonan...
           </div>
 
-          <div v-else-if="allLeaves.length === 0" class="py-12 text-center text-gray-400 text-xs">
-            Tidak ada permohonan surat izin.
+          <div v-else-if="filteredLeaves.length === 0" class="py-12 text-center text-gray-400 text-xs">
+            Tidak ada permohonan surat izin yang sesuai filter.
           </div>
 
           <div v-else class="space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
             <div
-              v-for="item in allLeaves"
+              v-for="item in filteredLeaves"
               :key="item.id"
               @click="selectItem(item)"
               class="p-3.5 rounded-xl border cursor-pointer transition text-left space-y-2"
@@ -268,6 +286,14 @@ const pageSubtitle = computed(() => {
 
 const pendingLeaves = computed(() => {
   return allLeaves.value.filter(l => l.status === 'PENDING')
+})
+
+const filterDate = ref('')
+const filteredLeaves = computed(() => {
+  if (!filterDate.value) return allLeaves.value
+  return allLeaves.value.filter(l => {
+    return (filterDate.value >= l.start_date && filterDate.value <= l.end_date) || l.start_date === filterDate.value
+  })
 })
 
 const fetchLeaves = async () => {

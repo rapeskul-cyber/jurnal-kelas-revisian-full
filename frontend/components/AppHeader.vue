@@ -24,6 +24,20 @@
     <div class="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 max-w-[65%] sm:max-w-none justify-end">
       <slot name="actions" />
 
+      <!-- Teacher / Walas Dual Role Switcher -->
+      <button
+        v-if="authStore.isDualRole"
+        type="button"
+        @click="toggleTeacherRole"
+        :disabled="isSwitchingRole"
+        class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary hover:text-white text-primary text-xs font-bold transition shadow-2xs cursor-pointer min-h-[36px] sm:min-h-[40px] shrink-0 active:scale-95 disabled:opacity-50"
+        :title="authStore.user?.role === 'GURU_PEMBIMBING' ? 'Klik untuk beralih ke Mode Guru Pengajar' : 'Klik untuk beralih ke Mode Wali Kelas'"
+      >
+        <RefreshCw class="w-3.5 h-3.5 shrink-0" :class="{ 'animate-spin': isSwitchingRole }" />
+        <span class="hidden sm:inline">{{ authStore.user?.role === 'GURU_PEMBIMBING' ? 'Mode: Wali Kelas' : 'Mode: Guru Pengajar' }}</span>
+        <span class="sm:hidden">{{ authStore.user?.role === 'GURU_PEMBIMBING' ? 'Walas' : 'Guru' }}</span>
+      </button>
+
       <!-- Kritik & Saran Link (Desktop/Tablet) -->
       <a
         href="https://saran.rapiuw.ai.id"
@@ -87,6 +101,7 @@ import {
   ArrowLeft,
   Book,
   User,
+  RefreshCw,
 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
@@ -112,6 +127,20 @@ const props = withDefaults(
 const router = useRouter()
 const authStore = useAuthStore()
 const unreadCount = ref(0)
+const isSwitchingRole = ref(false)
+
+const toggleTeacherRole = async () => {
+  const currentRole = authStore.user?.role
+  const targetRole = currentRole === 'GURU_PEMBIMBING' ? 'GURU_PENGAJAR' : 'GURU_PEMBIMBING'
+  isSwitchingRole.value = true
+  try {
+    await authStore.switchRole(targetRole)
+  } catch (e) {
+    console.error('Failed to switch role:', e)
+  } finally {
+    isSwitchingRole.value = false
+  }
+}
 
 onMounted(async () => {
   if (authStore.token) {

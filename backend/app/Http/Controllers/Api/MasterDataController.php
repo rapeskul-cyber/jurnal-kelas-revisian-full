@@ -398,7 +398,7 @@ class MasterDataController extends Controller
         $this->checkSuperadmin($request);
 
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|unique:terms,name',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
             'effective_days' => 'required|integer',
@@ -419,6 +419,38 @@ class MasterDataController extends Controller
 
         return response()->json([
             'message' => "Semester {$term->name} berhasil ditambahkan",
+            'term' => $term,
+        ]);
+    }
+
+    public function updateTerm(Request $request, $id)
+    {
+        $this->checkSuperadmin($request);
+
+        $term = Term::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|unique:terms,name,' . $term->id,
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+            'effective_days' => 'required|integer',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($request->is_active && !$term->is_active) {
+            Term::query()->update(['is_active' => false]);
+        }
+
+        $term->update($request->only(['name', 'start_date', 'end_date', 'effective_days', 'is_active']));
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => "Memperbarui data tahun ajaran/semester ID #{$term->id}: {$term->name}",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'message' => "Semester {$term->name} berhasil diperbarui",
             'term' => $term,
         ]);
     }

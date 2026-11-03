@@ -60,6 +60,36 @@ class AuthController extends Controller
         return response()->json($user);
     }
 
+    public function switchRole(Request $request)
+    {
+        $user = $request->user();
+        $targetRole = $request->input('role');
+
+        if (!in_array($targetRole, ['GURU_PENGAJAR', 'GURU_PEMBIMBING'])) {
+            return response()->json(['message' => 'Pilihan peran tidak valid.'], 422);
+        }
+
+        // Cek apakah user adalah guru yang memiliki kelas perwalian (Wali Kelas)
+        $hasGuidedClass = \App\Models\SchoolClass::where('advisor_id', $user->id)->exists();
+        if (!$hasGuidedClass && $targetRole === 'GURU_PEMBIMBING') {
+            return response()->json(['message' => 'Anda tidak terdaftar sebagai wali kelas dari kelas binaan manapun.'], 403);
+        }
+
+        $user->role = $targetRole;
+        $user->save();
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => "Beralih peran aktif menjadi {$targetRole}",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'message' => 'Berhasil beralih ke peran ' . ($targetRole === 'GURU_PEMBIMBING' ? 'Wali Kelas' : 'Guru Pengajar'),
+            'user' => $user->fresh()->load(['schoolClass', 'guidedClass']),
+        ]);
+    }
+
     public function updateProfile(Request $request)
     {
         $user = $request->user();

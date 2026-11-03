@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/auth/switch-role', [AuthController::class, 'switchRole']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     // Dashboard
@@ -126,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/master/terms', [MasterDataController::class, 'getTerms']);
     Route::post('/master/terms', [MasterDataController::class, 'storeTerm']);
+    Route::put('/master/terms/{id}', [MasterDataController::class, 'updateTerm']);
     Route::put('/master/terms/{id}/activate', [MasterDataController::class, 'activateTerm']);
 
     // System Settings & Management (Superadmin)

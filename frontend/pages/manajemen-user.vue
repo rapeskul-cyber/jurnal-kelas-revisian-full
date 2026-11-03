@@ -78,6 +78,18 @@
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- Link Google Form untuk Pendaftaran Akun -->
+            <a
+              href="https://forms.gle/jurnal71"
+              target="_blank"
+              class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              title="Buka Google Form pendaftaran data akun siswa / guru"
+            >
+              <ExternalLink class="w-4 h-4 text-emerald-600" />
+              <span class="hidden sm:inline">Link Google Form</span>
+              <span class="sm:hidden">GForm</span>
+            </a>
+
             <!-- Impor Pengguna Button (Superadmin Only) -->
             <button
               v-if="authStore.user?.role === 'SUPERADMIN'"
@@ -377,22 +389,59 @@
                 />
               </div>
 
-              <!-- Peran Sistem -->
+              <!-- Peran Sistem (Radio Buttons Sesuai Revisi) -->
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                  Peran Sistem
+                <label class="block text-xs font-semibold text-gray-700 mb-2">
+                  Pilih Peran Sistem (Role Akun) *
                 </label>
-                <select
-                  v-model="newUser.role"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
-                  required
-                >
-                  <option value="GURU_PEMBIMBING">Wali Kelas</option>
-                  <option value="GURU_PENGAJAR">Guru Pengajar</option>
-                  <option value="SEKRETARIS">Sekretaris Kelas</option>
-                  <option value="SISWA">Siswa</option>
-                  <option value="ORANG_TUA">Orang Tua Siswa</option>
-                </select>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <label
+                    v-for="r in [
+                      { value: 'GURU_PEMBIMBING', label: 'Wali Kelas', desc: 'Kelola kelas binaan' },
+                      { value: 'GURU_PENGAJAR', label: 'Guru Pengajar', desc: 'Isi KBM & materi' },
+                      { value: 'SEKRETARIS', label: 'Sekretaris', desc: 'Verifikasi hadir' },
+                      { value: 'SISWA', label: 'Siswa', desc: 'Presensi mandiri' },
+                      { value: 'ORANG_TUA', label: 'Orang Tua', desc: 'Pantau kehadiran' },
+                      { value: 'SUPERADMIN', label: 'Superadmin', desc: 'Maks. 3 akun' }
+                    ]"
+                    :key="r.value"
+                    class="flex flex-col p-2.5 rounded-xl border cursor-pointer transition select-none"
+                    :class="newUser.role === r.value ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:bg-gray-50'"
+                  >
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        v-model="newUser.role"
+                        :value="r.value"
+                        class="text-primary focus:ring-primary w-3.5 h-3.5"
+                      />
+                      <span class="font-bold text-gray-900 text-xs">{{ r.label }}</span>
+                    </div>
+                    <span class="text-[10px] text-gray-400 mt-1 pl-5">{{ r.desc }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Opsi Rangkap Wali Kelas untuk Guru Pengajar (Cegah Akun Dobel) -->
+              <div v-if="newUser.role === 'GURU_PENGAJAR'" class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    v-model="newUser.is_also_walas"
+                    class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+                  />
+                  <span class="text-xs font-bold text-amber-900">Sekaligus Ditugaskan sebagai Wali Kelas (Tanpa Akun Dobel)</span>
+                </label>
+                <div v-if="newUser.is_also_walas" class="pt-1">
+                  <label class="block text-[11px] font-semibold text-amber-800 mb-1">Pilih Rombel / Kelas Binaan:</label>
+                  <select
+                    v-model="newUser.advisor_class_id"
+                    class="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                  >
+                    <option value="">-- Pilih Kelas Perwalian --</option>
+                    <option v-for="c in classesList" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Hubungkan dengan Siswa (Jika Peran Orang Tua) -->
@@ -787,6 +836,7 @@ import {
   Pencil,
   Trash2,
   GraduationCap,
+  ExternalLink,
 } from 'lucide-vue-next'
 
 const config = useRuntimeConfig()
@@ -815,12 +865,14 @@ const users = ref<any[]>([])
 
 const newUser = ref({
   name: '',
-  role: 'ORANG_TUA',
+  role: 'GURU_PEMBIMBING',
   nip_nis: '',
   class_id: '1',
   student_id: '',
   email: '',
-  phone: ''
+  phone: '',
+  is_also_walas: false,
+  advisor_class_id: '',
 })
 
 const editUser = ref({
@@ -983,6 +1035,9 @@ const submitCreateUser = async () => {
         nip_nis: newUser.value.nip_nis,
         class_id: newUser.value.class_id ? Number(newUser.value.class_id) : null,
         student_id: (newUser.value.role === 'ORANG_TUA' && newUser.value.student_id) ? Number(newUser.value.student_id) : null,
+        advisor_class_id: (newUser.value.role === 'GURU_PENGAJAR' && newUser.value.is_also_walas && newUser.value.advisor_class_id)
+          ? Number(newUser.value.advisor_class_id)
+          : null,
       }
     })
 

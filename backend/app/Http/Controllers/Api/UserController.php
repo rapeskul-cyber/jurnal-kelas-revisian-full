@@ -149,8 +149,8 @@ class UserController extends Controller
 
         if ($request->role === 'SUPERADMIN') {
             $superadminCount = User::where('role', 'SUPERADMIN')->count();
-            if ($superadminCount >= 1) {
-                return response()->json(['message' => 'Superadmin dibatasi maksimal hanya 1 akun di dalam sistem!'], 422);
+            if ($superadminCount >= 3) {
+                return response()->json(['message' => 'Batas kuota akun Superadmin maksimal adalah 3 akun di dalam sistem demi keamanan.'], 422);
             }
         }
 
@@ -204,8 +204,9 @@ class UserController extends Controller
             'is_active' => true,
         ]);
 
-        if ($request->role === 'GURU_PEMBIMBING' && $request->class_id) {
-            SchoolClass::where('id', $request->class_id)->update(['advisor_id' => $user->id]);
+        $advisorClassId = $request->input('advisor_class_id') ?: ($request->role === 'GURU_PEMBIMBING' ? $request->class_id : null);
+        if ($advisorClassId && in_array($user->role, ['GURU_PEMBIMBING', 'GURU_PENGAJAR'])) {
+            SchoolClass::where('id', $advisorClassId)->update(['advisor_id' => $user->id]);
         }
 
         if ($request->role === 'GURU_PENGAJAR' && $request->subject_id) {

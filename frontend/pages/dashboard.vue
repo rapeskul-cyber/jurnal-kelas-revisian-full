@@ -1140,6 +1140,75 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- Monitoring Kehadiran Kelas Per Jam Pelajaran (Realtime untuk Walas) -->
+            <div class="mt-6 pt-5 border-t border-gray-100 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                    <Clock class="w-4 h-4 text-primary" />
+                    <span>Kehadiran Kelas Per Jam Pelajaran (Hari Ini)</span>
+                  </h4>
+                  <p class="text-[11px] text-gray-400 mt-0.5">Pantau kehadiran murid per jam mapel dan deteksi jika ada siswa yang cabut di jam tertentu</p>
+                </div>
+                <span class="text-[11px] font-bold text-primary bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                  {{ data?.periods_attendance?.length || 0 }} Jam KBM
+                </span>
+              </div>
+
+              <div v-if="!data?.periods_attendance?.length" class="text-center py-4 text-gray-400 text-xs">
+                Tidak ada jadwal KBM aktif untuk hari ini.
+              </div>
+
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div
+                  v-for="p in data?.periods_attendance"
+                  :key="p.id"
+                  class="p-3.5 rounded-xl border transition"
+                  :class="p.is_current ? 'border-blue-400 bg-blue-50/20 ring-1 ring-blue-300' : 'border-gray-200 bg-white'"
+                >
+                  <div class="flex items-center justify-between text-xs pb-1.5 border-b border-gray-100">
+                    <span class="font-bold text-gray-900 flex items-center gap-1">
+                      <Clock class="w-3.5 h-3.5 text-gray-400" />
+                      {{ p.time }}
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                      :class="p.is_current ? 'bg-blue-100 text-blue-800 animate-pulse' : (p.status_kbm === 'Selesai' ? 'bg-gray-100 text-gray-600' : 'bg-amber-50 text-amber-700')"
+                    >
+                      {{ p.status_kbm }}
+                    </span>
+                  </div>
+
+                  <div class="pt-2 space-y-1 text-xs">
+                    <div class="font-bold text-gray-800 truncate">{{ p.subject }}</div>
+                    <div class="text-[11px] text-gray-500">Guru: {{ p.teacher }}</div>
+
+                    <!-- Kehadiran Status Jam Ini -->
+                    <div class="pt-1.5 flex items-center justify-between text-[11px]">
+                      <span v-if="p.absent_count === 0" class="inline-flex items-center gap-1 font-bold text-emerald-600">
+                        <CheckCircle2 class="w-3 h-3" /> Lengkap (Tidak ada cabut)
+                      </span>
+                      <span v-else class="inline-flex items-center gap-1 font-bold text-rose-600">
+                        <AlertCircle class="w-3 h-3" /> {{ p.absent_count }} Siswa Cabut Jam Ini
+                      </span>
+                      <span class="text-gray-400 font-mono">{{ p.present_count }} Hadir</span>
+                    </div>
+
+                    <!-- Siswa Cabut Names jika ada -->
+                    <div v-if="p.absent_students && p.absent_students.length > 0" class="pt-1 flex flex-wrap gap-1">
+                      <span
+                        v-for="std in p.absent_students"
+                        :key="std.id"
+                        class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-semibold border border-rose-200"
+                      >
+                        {{ std.name }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Persetujuan Surat Izin Cards (1 col) -->

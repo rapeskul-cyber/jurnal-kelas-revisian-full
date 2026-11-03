@@ -817,6 +817,54 @@ class DashboardController extends Controller
             ];
         });
 
+        // 6. Monitoring Kehadiran Kelas Per Jam Pelajaran (Realtime)
+        $schedulesToday = Schedule::with(['subject', 'teacher'])
+            ->where('class_id', $guidedClass->id)
+            ->where(function($q) use ($currentDayName) {
+                $q->where('day', $currentDayName)->orWhereNull('day');
+            })
+            ->orderBy('start_time')
+            ->get();
+
+        $now = Carbon::now('Asia/Jakarta');
+        $nowStr = $now->format('H:i');
+
+        $periodsAttendance = $schedulesToday->map(function ($sch) use ($todayJournals, $nowStr, $totalStudents) {
+            $journal = $todayJournals->firstWhere('schedule_id', $sch->id);
+            $startStr = substr($sch->start_time ?? '07:30', 0, 5);
+            $endStr = substr($sch->end_time ?? '09:00', 0, 5);
+            $isCurrent = ($nowStr >= $startStr && $nowStr <= $endStr);
+
+            $absentList = [];
+            if ($journal && $journal->notes && str_starts_with(trim($journal->notes), '{')) {
+                $dec = json_decode($journal->notes, true);
+                if (is_array($dec) && !empty($dec['absent_students'])) {
+                    $absentList = $dec['absent_students'];
+                }
+            }
+
+            $statusKbm = 'Belum Dimulai';
+            if ($isCurrent) {
+                $statusKbm = 'Sedang Berlangsung';
+            } elseif ($nowStr > $endStr) {
+                $statusKbm = 'Selesai';
+            }
+
+            return [
+                'id' => $sch->id,
+                'time' => "{$startStr} - {$endStr}",
+                'subject' => $sch->subject->name ?? 'Mata Pelajaran',
+                'teacher' => $sch->teacher->name ?? 'Guru Pengajar',
+                'status_kbm' => $statusKbm,
+                'is_current' => $isCurrent,
+                'journal_filled' => !!$journal,
+                'journal_verified' => ($journal && $journal->verification_status === 'TERVERIFIKASI'),
+                'absent_students' => $absentList,
+                'absent_count' => count($absentList),
+                'present_count' => max(0, $totalStudents - count($absentList)),
+            ];
+        });
+
         return response()->json([
             'stats' => [
                 'total_kelas' => $guidedClass->name,
@@ -826,6 +874,7 @@ class DashboardController extends Controller
             ],
             'monitored_classes' => $monitoredClasses,
             'pending_leaves' => $leaveList,
+            'periods_attendance' => $periodsAttendance,
         ]);
     }
 

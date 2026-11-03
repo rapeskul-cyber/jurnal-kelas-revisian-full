@@ -248,17 +248,46 @@
             </button>
           </div>
 
+          <!-- Filter Harian & Status Sesuai Revisi -->
+          <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-150 text-xs">
+            <div class="flex items-center gap-1.5 flex-1 min-w-[140px]">
+              <span class="text-gray-400 text-[11px] font-semibold">Tgl:</span>
+              <input
+                type="date"
+                v-model="filterDate"
+                class="w-full px-2 py-1 rounded-lg border border-gray-200 text-xs bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <select
+              v-model="filterStatus"
+              class="px-2 py-1 rounded-lg border border-gray-200 text-xs bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="PENDING">Menunggu</option>
+              <option value="APPROVED">Disetujui</option>
+              <option value="REJECTED">Ditolak</option>
+            </select>
+            <button
+              v-if="filterDate || filterStatus !== 'ALL'"
+              type="button"
+              @click="filterDate = ''; filterStatus = 'ALL'"
+              class="text-xs text-primary hover:underline font-semibold cursor-pointer"
+            >
+              Reset
+            </button>
+          </div>
+
           <div v-if="loadingLeaves" class="py-12 text-center text-gray-400 text-sm">
             Memuat riwayat permohonan...
           </div>
 
-          <div v-else-if="leaveList.length === 0" class="py-12 text-center text-gray-400 text-sm">
-            Belum ada permohonan surat izin yang diajukan.
+          <div v-else-if="filteredLeaveList.length === 0" class="py-12 text-center text-gray-400 text-sm">
+            Belum ada permohonan surat izin yang sesuai filter.
           </div>
 
           <div v-else class="space-y-3.5 max-h-[580px] overflow-y-auto pr-1">
             <div
-              v-for="lv in leaveList"
+              v-for="lv in filteredLeaveList"
               :key="lv.id"
               class="p-4 rounded-xl border border-gray-100 bg-gray-50/50 space-y-2.5 transition hover:border-gray-200"
             >
@@ -350,6 +379,20 @@ const leaveList = ref<any[]>([])
 const loadingLeaves = ref(false)
 const submitting = ref(false)
 const successMsg = ref('')
+
+const filterDate = ref('')
+const filterStatus = ref('ALL')
+
+const filteredLeaveList = computed(() => {
+  return leaveList.value.filter(lv => {
+    const matchStatus = filterStatus.value === 'ALL' || lv.status === filterStatus.value
+    let matchDate = true
+    if (filterDate.value) {
+      matchDate = (filterDate.value >= lv.start_date && filterDate.value <= lv.end_date) || lv.start_date === filterDate.value
+    }
+    return matchStatus && matchDate
+  })
+})
 
 const form = ref({
   type: 'SAKIT',
