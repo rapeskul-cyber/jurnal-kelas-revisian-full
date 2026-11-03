@@ -59,12 +59,17 @@ class JournalController extends Controller
                 $query->where('created_by_id', $user->id);
             }
         } elseif ($user->role === 'GURU_PEMBIMBING') {
-            $class = SchoolClass::where('advisor_id', $user->id)->first();
-            $targetClassId = $class ? $class->id : ($classId ?: $user->class_id);
-            if ($targetClassId) {
-                $query->where('class_id', $targetClassId);
-            } else {
+            if ($type === 'personal') {
+                // Sesuai catatan: Guru pengajar dan walas tidak bisa melihat catatan jurnal siswa (privasi siswa)
                 $query->where('id', 0);
+            } else {
+                $class = SchoolClass::where('advisor_id', $user->id)->first();
+                $targetClassId = $class ? $class->id : ($classId ?: $user->class_id);
+                if ($targetClassId) {
+                    $query->where('class_id', $targetClassId);
+                } else {
+                    $query->where('id', 0);
+                }
             }
         } elseif ($user->role === 'GURU_PENGAJAR') {
             if ($type === 'class_agenda') {
@@ -423,6 +428,9 @@ class JournalController extends Controller
             }
             return [
                 'id' => $m->id,
+                'schedule_id' => $m->schedule_id,
+                'class_id' => $m->class_id,
+                'date' => Carbon::parse($m->date)->format('Y-m-d'),
                 'date_time' => Carbon::parse($m->date)->translatedFormat('d M, 07:30'),
                 'teacher' => $m->teacher->name ?? 'Guru Pengajar',
                 'subject' => $m->subject->name ?? 'Mata Pelajaran',

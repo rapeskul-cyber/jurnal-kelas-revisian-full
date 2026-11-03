@@ -46,6 +46,19 @@
               <option value="PENDING">Menunggu Konfirmasi</option>
             </select>
           </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-500 mb-1">Filter Kelas</label>
+            <select
+              v-model="classFilter"
+              class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
+            >
+              <option value="ALL">Semua Kelas</option>
+              <option v-for="cName in availableClassNames" :key="cName" :value="cName">
+                {{ cName }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div class="w-full md:w-72">
@@ -294,20 +307,31 @@ const now = new Date()
 const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 const selectedMonth = ref(currentYearMonth)
 const statusFilter = ref('ALL')
+const classFilter = ref('ALL')
 const searchQuery = ref('')
 const selectedJournal = ref<any | null>(null)
+
+const availableClassNames = computed(() => {
+  const set = new Set<string>()
+  journals.value.forEach(j => {
+    if (j.class && j.class !== '-') set.add(j.class)
+  })
+  return Array.from(set).sort()
+})
 
 const filteredJournals = computed(() => {
   return journals.value.filter(j => {
     const matchStatus = statusFilter.value === 'ALL' || j.status === statusFilter.value
+    const matchClass = classFilter.value === 'ALL' || j.class === classFilter.value
     const q = searchQuery.value.toLowerCase()
     const matchSearch =
       !q ||
       (j.subject && j.subject.toLowerCase().includes(q)) ||
       (j.teacher && j.teacher.toLowerCase().includes(q)) ||
       (j.created_by && j.created_by.toLowerCase().includes(q)) ||
+      (j.class && j.class.toLowerCase().includes(q)) ||
       (j.activity && j.activity.toLowerCase().includes(q))
-    return matchStatus && matchSearch
+    return matchStatus && matchClass && matchSearch
   })
 })
 

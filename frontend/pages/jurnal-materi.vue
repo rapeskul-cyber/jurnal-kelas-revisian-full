@@ -143,24 +143,31 @@
               v-else
               v-for="item in scheduleItems"
               :key="item.id"
-              class="p-4 sm:p-5 rounded-2xl border border-gray-150 bg-white hover:border-gray-300 hover:shadow-xs transition duration-150 space-y-3"
+              class="p-4 sm:p-5 rounded-2xl border transition duration-150 space-y-3"
+              :class="item.is_current_slot ? 'border-blue-400 bg-blue-50/20 shadow-md ring-2 ring-blue-400/40' : 'border-gray-150 bg-white hover:border-gray-300 hover:shadow-xs'"
             >
               <!-- Baris Atas: Info Jadwal dan Status Badge -->
               <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b border-gray-100">
                 <div class="space-y-1.5 min-w-0 flex-1">
-                  <!-- Waktu -->
-                  <div class="flex items-center gap-2 text-xs">
-                    <span class="text-gray-400 font-medium text-[11px] w-24 shrink-0">Waktu</span>
+                  <!-- Waktu & Active Indicator -->
+                  <div class="flex items-center gap-2 text-xs flex-wrap">
+                    <span class="text-gray-400 font-medium text-[11px] w-20 shrink-0">Waktu</span>
                     <span class="text-gray-300">•</span>
                     <span class="inline-flex items-center gap-1.5 font-bold text-gray-800 tracking-tight">
                       <ClockIcon class="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       {{ item.time }}
                     </span>
+                    <span
+                      v-if="item.is_current_slot"
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-700 border border-blue-300 animate-pulse"
+                    >
+                      🔵 Sedang Berlangsung (Jam Pelajaran Ini)
+                    </span>
                   </div>
 
                   <!-- Mata Pelajaran & Kelas -->
                   <div class="flex items-center gap-2 text-xs">
-                    <span class="text-gray-400 font-medium text-[11px] w-24 shrink-0">Mata Pelajaran</span>
+                    <span class="text-gray-400 font-medium text-[11px] w-20 shrink-0">Mata Pelajaran</span>
                     <span class="text-gray-300">•</span>
                     <span class="font-bold text-gray-900 text-xs sm:text-sm truncate">
                       {{ item.subject }}
@@ -196,32 +203,55 @@
                 </div>
               </div>
 
-              <!-- Baris Bawah: Info Topik Ringkas & Tombol Aksi -->
+              <!-- Baris Bawah: Info Topik Ringkas, Modul Terdeteksi & Tombol Aksi -->
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                <div class="text-xs text-gray-500 min-w-0 flex-1 space-y-1">
+                <div class="text-xs text-gray-500 min-w-0 flex-1 space-y-1.5">
                   <p v-if="item.topic" class="truncate text-[11px]">
                     <span class="font-semibold text-gray-700">Topik Materi:</span> {{ item.topic }}
                   </p>
                   <p v-else class="text-[11px] text-gray-400 italic">
                     Belum ada topik materi yang diinput hari ini.
                   </p>
-                  <!-- Alert Siswa Cabut Jam Ini -->
-                  <div v-if="item.absent_students && item.absent_students.length > 0" class="flex items-center gap-1.5 text-rose-700 text-[11px] font-bold">
-                    <AlertCircleIcon class="w-3.5 h-3.5 shrink-0" />
-                    <span>{{ item.absent_students.length }} Siswa Tidak Mengikuti Jam Ini (Cabut)</span>
+
+                  <!-- Modul Belajar Terdeteksi Hari Ini -->
+                  <div v-if="item.has_material" class="flex items-center gap-2 flex-wrap">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <BookOpenIcon class="w-3 h-3 text-emerald-600" />
+                      <span>Modul Terdeteksi Hari Ini: {{ item.material_topic }}</span>
+                    </span>
+                    <a
+                      v-if="item.material_url"
+                      :href="item.material_url"
+                      target="_blank"
+                      class="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                    >
+                      <DownloadIcon class="w-3 h-3" /> Unduh Dokumen
+                    </a>
                   </div>
                 </div>
 
-                <!-- Tombol Aksi -->
+                <!-- Tombol Aksi: jika sudah diisi berubah menjadi Detail Jurnal / Lihat Jurnal -->
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end sm:justify-start pt-1 sm:pt-0">
-                  <!-- Detail Jurnal -->
+                  <!-- Jika Belum Diisi -> Tombol Isi Jurnal KBM -->
                   <button
+                    v-if="item.status === 'Belum Diisi'"
+                    type="button"
+                    @click="openFillJournal(item)"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-primary bg-primary text-white hover:bg-primary-hover text-xs font-bold transition cursor-pointer shadow-2xs whitespace-nowrap active:scale-95"
+                  >
+                    <PlusIcon class="w-3.5 h-3.5 text-white" />
+                    <span>Isi Jurnal KBM</span>
+                  </button>
+
+                  <!-- Jika Sudah Diisi -> Tombol Lihat Detail Jurnal -->
+                  <button
+                    v-else
                     type="button"
                     @click="openJournalDetail(item)"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-primary/20 bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-bold transition cursor-pointer shadow-2xs whitespace-nowrap active:scale-95"
                   >
-                    <EyeIcon class="w-3.5 h-3.5 text-gray-500" />
-                    <span>Detail Jurnal</span>
+                    <EyeIcon class="w-3.5 h-3.5" />
+                    <span>Lihat Detail Jurnal</span>
                   </button>
 
                   <!-- Edit Jurnal (jika Menunggu) -->
@@ -229,7 +259,7 @@
                     v-if="item.status.includes('Menunggu')"
                     type="button"
                     @click="openFillJournal(item)"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
                   >
                     <Edit2Icon class="w-3.5 h-3.5 text-amber-700" />
                     <span>Edit</span>
@@ -240,21 +270,10 @@
                     v-if="item.status.includes('Menunggu')"
                     type="button"
                     @click="openConfirmModal(item)"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold transition cursor-pointer shadow-2xs whitespace-nowrap active:scale-95"
                   >
                     <CheckIcon class="w-3.5 h-3.5" />
                     <span>Paraf / Sahkan</span>
-                  </button>
-
-                  <!-- Isi Jurnal (jika Belum Diisi) -->
-                  <button
-                    v-if="item.status === 'Belum Diisi'"
-                    type="button"
-                    @click="openFillJournal(item)"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-primary bg-primary text-white hover:bg-primary-hover text-xs font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
-                  >
-                    <PlusIcon class="w-3.5 h-3.5 text-white" />
-                    <span>Isi Jurnal KBM</span>
                   </button>
                 </div>
               </div>
@@ -695,74 +714,6 @@
             />
           </div>
 
-          <!-- Fitur Siswa Tidak Berada di Jam Ini (Cabut / Tidak Mengikuti KBM) -->
-          <div class="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-2.5 text-xs">
-            <div class="flex items-center justify-between">
-              <label class="font-bold text-amber-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <AlertCircleIcon class="w-4 h-4 text-amber-700 shrink-0" />
-                <span>Siswa Tidak Berada di Jam Ini (Cabut)</span>
-              </label>
-              <span class="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full">
-                {{ selectedModalAbsentStudents.length }} Siswa Ditandai
-              </span>
-            </div>
-            <p class="text-[11px] text-amber-800 leading-relaxed">
-              Tandai jika ada siswa yang tidak hadir khusus pada jam pelajaran Anda ini saja (cabut KBM). Data disimpan khusus di log jurnal sesi ini tanpa menimpa presensi harian utama siswa.
-            </p>
-
-            <!-- Search Siswa di Kelas Ini -->
-            <div class="relative">
-              <SearchIcon class="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                v-model="searchModalStudentQuery"
-                type="text"
-                placeholder="Cari nama siswa di kelas ini..."
-                class="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-200 text-xs bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-              />
-            </div>
-
-            <!-- List Siswa Checklist -->
-            <div class="max-h-36 overflow-y-auto divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 p-1">
-              <label
-                v-for="std in filteredModalClassStudents"
-                :key="std.id"
-                class="flex items-center justify-between p-2 rounded-lg hover:bg-amber-50/50 cursor-pointer"
-              >
-                <div class="flex items-center gap-2 min-w-0">
-                  <input
-                    type="checkbox"
-                    :checked="isModalStudentAbsent(std.id)"
-                    @change="toggleModalAbsentStudent(std)"
-                    class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 shrink-0 cursor-pointer"
-                  />
-                  <span class="font-semibold text-gray-800 truncate">{{ std.name }}</span>
-                </div>
-                <span class="text-[10px] text-gray-400 font-mono shrink-0 ml-2">NIS: {{ std.nis }}</span>
-              </label>
-              <div v-if="filteredModalClassStudents.length === 0" class="p-3 text-center text-xs text-gray-400">
-                {{ modalClassStudents.length === 0 ? 'Memuat daftar siswa kelas...' : 'Tidak ada siswa yang cocok.' }}
-              </div>
-            </div>
-
-            <!-- Tagged Absent Students -->
-            <div v-if="selectedModalAbsentStudents.length > 0" class="flex flex-wrap gap-1.5 pt-1">
-              <span
-                v-for="std in selectedModalAbsentStudents"
-                :key="std.id"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold"
-              >
-                <span>{{ std.name }}</span>
-                <button
-                  type="button"
-                  @click="toggleModalAbsentStudent(std)"
-                  class="text-rose-500 hover:text-rose-800 cursor-pointer"
-                >
-                  <XIcon class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
-          </div>
-
           <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -1035,6 +986,7 @@ import {
   Search as SearchIcon,
   UploadCloud as UploadCloudIcon,
   Download as DownloadIcon,
+  BookOpen as BookOpenIcon,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -1061,6 +1013,7 @@ const savingFillJournal = ref(false)
 
 const allTeacherSchedules = ref<any[]>([])
 const allTeacherJournals = ref<any[]>([])
+const allTeacherMaterials = ref<any[]>([])
 const availableClasses = ref<any[]>([])
 const scheduleItems = ref<any[]>([])
 
@@ -1267,6 +1220,12 @@ const applyScheduleFilter = () => {
     filtered = allTeacherSchedules.value.filter((sch: any) => sch.day === activeDayFilter.value)
   }
 
+  // Waktu sekarang WIB untuk deteksi jam pelajaran aktif (Current Time Slot)
+  const now = new Date()
+  const wibHour = (now.getUTCHours() + 7) % 24
+  const wibMin = now.getUTCMinutes()
+  const nowMinutes = wibHour * 60 + wibMin
+
   scheduleItems.value = filtered.map((sch: any) => {
     const match = allTeacherJournals.value.find((j: any) =>
       (j.schedule_id === sch.id || (j.class === sch.school_class?.name && j.subject === sch.subject?.name)) &&
@@ -1277,6 +1236,19 @@ const applyScheduleFilter = () => {
     if (match) {
       status = match.status === 'TERVERIFIKASI' ? 'Terverifikasi' : 'Menunggu Paraf Guru'
     }
+
+    const startParts = (sch.start_time || '07:30').slice(0, 5).split(':').map(Number)
+    const endParts = (sch.end_time || '09:00').slice(0, 5).split(':').map(Number)
+    const startMinutes = (startParts[0] || 0) * 60 + (startParts[1] || 0)
+    const endMinutes = (endParts[0] || 0) * 60 + (endParts[1] || 0)
+
+    const isToday = (!sch.day || sch.day === currentDayName.value)
+    const isCurrentTimeSlot = isToday && (nowMinutes >= startMinutes && nowMinutes <= endMinutes)
+
+    const matchMat = allTeacherMaterials.value.find((m: any) =>
+      (m.schedule_id === sch.id || (m.subject === sch.subject?.name && (!m.class_id || m.class_id === sch.class_id))) &&
+      (!m.date || m.date === todayStr)
+    )
 
     return {
       id: sch.id,
@@ -1290,7 +1262,12 @@ const applyScheduleFilter = () => {
       activity: match ? match.activity : '',
       notes: match ? match.notes : '',
       absent_students: match ? (match.absent_students || []) : [],
-      created_by: match ? match.created_by : 'Sekretaris'
+      created_by: match ? match.created_by : 'Sekretaris',
+      is_current_slot: isCurrentTimeSlot,
+      has_material: !!matchMat,
+      material_topic: matchMat ? matchMat.topic : null,
+      material_url: matchMat ? matchMat.attachment_url : null,
+      material_attachment: matchMat ? matchMat.attachment_name : null,
     }
   })
 
@@ -1305,18 +1282,22 @@ const setDayFilter = (day: string) => {
 
 const fetchTeacherSchedulesAndJournals = async () => {
   try {
-    const [schedulesRes, journalsRes] = await Promise.all([
+    const [schedulesRes, journalsRes, materialsRes] = await Promise.all([
       $fetch<any>(`${config.public.apiBase}/schedules`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       }),
       $fetch<any>(`${config.public.apiBase}/journals/class`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
-      })
+      }),
+      $fetch<any>(`${config.public.apiBase}/journals/material`, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      }).catch(() => [])
     ])
 
     const scheduleList = Array.isArray(schedulesRes) ? schedulesRes : []
     allTeacherSchedules.value = scheduleList
     allTeacherJournals.value = journalsRes?.data || (Array.isArray(journalsRes) ? journalsRes : [])
+    allTeacherMaterials.value = Array.isArray(materialsRes) ? materialsRes : (materialsRes?.data || [])
 
     applyScheduleFilter()
   } catch (e) {

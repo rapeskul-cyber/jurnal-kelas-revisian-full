@@ -75,9 +75,7 @@
       <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-4">
         <div>
           <h3 class="text-sm font-bold text-gray-900">Diagram Kehadiran</h3>
-          <p class="text-xs text-gray-400 mt-0.5">
-            Ringkasan kehadiran periode terpilih: {{ summary?.total ?? 0 }} hari total, {{ summary?.hadir ?? 0 }} hadir, {{ summary?.sakit ?? 0 }} sakit, {{ summary?.izin ?? 0 }} izin disetujui, {{ summary?.alpha ?? 0 }} ALFA.
-          </p>
+          <p class="text-xs text-gray-400 mt-0.5">Ringkasan grafik kehadiran bulan terpilih</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">

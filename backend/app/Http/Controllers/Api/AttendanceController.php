@@ -530,15 +530,20 @@ class AttendanceController extends Controller
                     ->whereIn('role', ['SISWA', 'SEKRETARIS'])
                     ->first();
             }
+            if (!$child && $user->class_id) {
+                $child = User::where('class_id', $user->class_id)
+                    ->whereIn('role', ['SISWA', 'SEKRETARIS'])
+                    ->first();
+            }
             if (!$child) {
                 return response()->json([
                     'summary' => [
+                        'total' => 0,
                         'hadir' => 0,
+                        'hadir_percent' => 100,
                         'sakit' => 0,
                         'izin' => 0,
                         'alpha' => 0,
-                        'persentase_kehadiran' => 0,
-                        'total_hari_kbm' => 0,
                     ],
                     'weekly' => [],
                     'details' => [],
@@ -549,9 +554,22 @@ class AttendanceController extends Controller
             $classId = $child->class_id ?: 1;
         }
 
-        // Ambil semua session kelas pada bulan tersebut
+        // Cari class_id yang benar jika user belum memiliki class_id yang tepat
+        if (!$classId || $classId == 1) {
+            $latestRecord = AttendanceRecord::where('student_id', $targetStudentId)->latest('id')->first();
+            if ($latestRecord && $latestRecord->session) {
+                $classId = $latestRecord->session->class_id;
+            } elseif ($user->class_id) {
+                $classId = $user->class_id;
+            }
+        }
+
+        $todayStr = Carbon::today('Asia/Jakarta')->toDateString();
+
+        // Ambil semua session kelas pada bulan tersebut yang sudah lewat atau hari ini (tidak mengambil sesi masa depan)
         $sessions = AttendanceSession::where('class_id', $classId)
             ->where('date', 'like', $month . '%')
+            ->whereDate('date', '<=', $todayStr)
             ->orderBy('date', 'desc')
             ->get();
 
@@ -575,6 +593,7 @@ class AttendanceController extends Controller
         $sakit = 0;
         $izin = 0;
         $alpha = 0;
+        $isParent = ($user->role === 'ORANG_TUA');
 
         foreach ($sessions as $session) {
             $dateStr = Carbon::parse($session->date)->toDateString();
@@ -592,9 +611,11 @@ class AttendanceController extends Controller
 
             if ($leaveForDate && $leaveForDate->status === 'APPROVED') {
                 $status = ($leaveForDate->type === 'SAKIT') ? 'SAKIT' : 'IZIN';
-                $note = 'Surat Izin ' . $leaveForDate->type . ' disetujui Wali Kelas: ' . ($leaveForDate->reason ?: '-');
+                $note = $isParent
+                    ? ($status === 'SAKIT' ? 'Sakit (Surat Dokter Terverifikasi)' : 'Izin Resmi')
+                    : ('Surat Izin ' . $leaveForDate->type . ' disetujui Wali Kelas: ' . ($leaveForDate->reason ?: '-'));
             } elseif ($leaveForDate && $leaveForDate->status === 'REJECTED') {
-                // Izin ditolak! Hanya berstatus HADIR jika diverifikasi langsung di kelas oleh Sekretaris / Wali Kelas (bukan klaim mandiri dari HP)
+                // Izin ditolak! Hanya berstatus HADIR jika diverifikasi langsung di kelas oleh Sekretaris / Wali Kelas
                 $verifiedInClass = false;
                 if ($rec && $rec->status === 'HADIR' && !str_contains($rec->note ?? '', 'Presensi Mandiri Pukul')) {
                     $verifiedInClass = true;
@@ -602,32 +623,40 @@ class AttendanceController extends Controller
 
                 if ($verifiedInClass) {
                     $status = 'HADIR';
-                    $note = $rec->note ?: 'Diverifikasi Hadir di Kelas oleh Sekretaris Kelas';
+                    $note = $isParent ? 'Hadir di Sekolah' : ($rec->note ?: 'Diverifikasi Hadir di Kelas oleh Sekretaris Kelas');
                 } else {
                     $status = 'DITOLAK';
                     $reason = $leaveForDate->review_note ? ": {$leaveForDate->review_note}" : '';
-                    $note = "Surat Izin Ditolak Wali Kelas{$reason} • Wajib Verifikasi di Kelas";
+                    $note = $isParent ? 'Surat Izin Ditolak' : "Surat Izin Ditolak Wali Kelas{$reason} • Wajib Verifikasi di Kelas";
                 }
             } elseif ($leaveForDate && $leaveForDate->status === 'PENDING') {
                 $status = 'PENDING';
-                $note = 'Surat Izin diajukan, menunggu persetujuan Wali Kelas';
+                $note = $isParent ? 'Menunggu Konfirmasi Wali Kelas' : 'Surat Izin diajukan, menunggu persetujuan Wali Kelas';
             } elseif ($rec) {
                 $status = $rec->status;
-                $note = $rec->note ?: 'Presensi Mandiri Terverifikasi';
+                if ($isParent) {
+                    if ($status === 'HADIR') $note = 'Hadir di Sekolah';
+                    elseif ($status === 'SAKIT') $note = 'Sakit';
+                    elseif ($status === 'IZIN') $note = 'Izin';
+                    elseif ($status === 'ALPHA') $note = 'Tidak Hadir (Tanpa Keterangan)';
+                    else $note = $rec->note ?: '-';
+                } else {
+                    $note = $rec->note ?: 'Presensi Mandiri Terverifikasi';
+                }
             } else {
-                if ($session->status === 'DRAFT' && $dateStr === Carbon::today()->toDateString()) {
+                if ($session->status === 'DRAFT' && $dateStr === $todayStr) {
                     $status = 'BELUM_PRESENSI';
-                    $note = 'Belum melakukan presensi mandiri hari ini';
+                    $note = $isParent ? 'Menunggu Presensi Mandiri' : 'Belum melakukan presensi mandiri hari ini';
                 } else {
                     $status = 'ALPHA';
-                    $note = 'Tidak hadir tanpa keterangan';
+                    $note = $isParent ? 'Tidak Hadir (Tanpa Keterangan)' : 'Tidak hadir tanpa keterangan';
                 }
             }
 
             if ($status === 'HADIR') $hadir++;
             elseif ($status === 'SAKIT') $sakit++;
             elseif ($status === 'IZIN') $izin++;
-            elseif (in_array($status, ['ALPHA', 'DITOLAK', 'BELUM_PRESENSI'])) $alpha++;
+            elseif (in_array($status, ['ALPHA', 'DITOLAK'])) $alpha++;
 
             $detailedList[] = [
                 'id' => $rec ? $rec->id : ('session_' . $session->id),
@@ -641,8 +670,9 @@ class AttendanceController extends Controller
             ];
         }
 
-        $total = count($detailedList);
-        $percentage = $total > 0 ? round(($hadir / $total) * 100) : 0;
+        $effectiveTotal = $hadir + $sakit + $izin + $alpha;
+        $percentage = $effectiveTotal > 0 ? round(($hadir / $effectiveTotal) * 100) : 100;
+        $totalDisplay = count($detailedList);
 
         // Weekly breakdown computed from actual records
         $weekly = [
@@ -654,7 +684,7 @@ class AttendanceController extends Controller
 
         return response()->json([
             'summary' => [
-                'total' => $total,
+                'total' => $totalDisplay,
                 'hadir' => $hadir,
                 'hadir_percent' => $percentage,
                 'sakit' => $sakit,
@@ -662,10 +692,10 @@ class AttendanceController extends Controller
                 'alpha' => $alpha,
             ],
             'donut' => [
-                ['label' => 'Hadir', 'count' => $hadir, 'color' => '#16A34A', 'percent' => $total > 0 ? round(($hadir / $total) * 100) : 0],
-                ['label' => 'Sakit', 'count' => $sakit, 'color' => '#EA580C', 'percent' => $total > 0 ? round(($sakit / $total) * 100) : 0],
-                ['label' => 'Izin', 'count' => $izin, 'color' => '#2563EB', 'percent' => $total > 0 ? round(($izin / $total) * 100) : 0],
-                ['label' => 'ALFA', 'count' => $alpha, 'color' => '#DC2626', 'percent' => $total > 0 ? round(($alpha / $total) * 100) : 0],
+                ['label' => 'Hadir', 'count' => $hadir, 'color' => '#16A34A', 'percent' => $effectiveTotal > 0 ? round(($hadir / $effectiveTotal) * 100) : 100],
+                ['label' => 'Sakit', 'count' => $sakit, 'color' => '#EA580C', 'percent' => $effectiveTotal > 0 ? round(($sakit / $effectiveTotal) * 100) : 0],
+                ['label' => 'Izin', 'count' => $izin, 'color' => '#2563EB', 'percent' => $effectiveTotal > 0 ? round(($izin / $effectiveTotal) * 100) : 0],
+                ['label' => 'ALFA', 'count' => $alpha, 'color' => '#DC2626', 'percent' => $effectiveTotal > 0 ? round(($alpha / $effectiveTotal) * 100) : 0],
             ],
             'weekly' => $weekly,
             'details' => $detailedList,

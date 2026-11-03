@@ -14,7 +14,6 @@ export const ROLE_MENUS: Record<string, MenuItem[]> = {
   SEKRETARIS: [
     { name: 'Dashboard', to: '/dashboard', icon: 'Home' },
     { name: 'Presensi Kelas Harian', to: '/presensi', icon: 'ClipboardCheck' },
-    { name: 'Agenda KBM Kelas', to: '/jurnal-kelas', icon: 'FileText' },
     { name: 'Catatan Belajar Pribadi', to: '/jurnal-pelajaran', icon: 'BookOpen' },
     { name: 'Surat Izin Saya', to: '/surat-izin', icon: 'Mail' },
     { name: 'Riwayat Kehadiran Saya', to: '/riwayat-kehadiran', icon: 'CalendarCheck' },

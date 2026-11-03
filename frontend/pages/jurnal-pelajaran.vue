@@ -123,7 +123,6 @@
                 <th class="pb-3 font-semibold whitespace-nowrap">Mata Pelajaran</th>
                 <th class="pb-3 font-semibold">Kegiatan yang Dikerjakan di Sekolah</th>
                 <th class="pb-3 font-semibold">Hasil / Catatan</th>
-                <th class="pb-3 font-semibold text-center whitespace-nowrap">Status Pantauan</th>
                 <th class="pb-3 font-semibold text-right whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
@@ -141,9 +140,6 @@
                   <div class="line-clamp-2 leading-relaxed" :title="act.notes || ''">
                     {{ act.notes || '-' }}
                   </div>
-                </td>
-                <td class="py-3.5 text-center whitespace-nowrap">
-                  <StatusBadge :status="act.status" />
                 </td>
                 <td class="py-3.5 text-right whitespace-nowrap">
                   <button
@@ -414,24 +410,6 @@
               </div>
               <div class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs sm:text-sm text-gray-800 leading-relaxed whitespace-pre-wrap select-text shadow-2xs">
                 {{ selectedActivity.notes || 'Tidak ada catatan progres tambahan yang dicantumkan.' }}
-              </div>
-            </div>
-
-            <!-- Field 3: Status Pantauan & Notifikasi Multi-Pihak -->
-            <div class="p-3.5 rounded-2xl border border-gray-150 bg-blue-50/30 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Status Pantauan & Verifikasi:</span>
-                <StatusBadge :status="selectedActivity.status" />
-              </div>
-              <div class="grid grid-cols-2 gap-2 pt-1 text-[10px] text-gray-600">
-                <div class="p-2.5 rounded-xl bg-white border border-gray-200 text-center">
-                  <span class="block text-gray-400">Wali Kelas</span>
-                  <span class="font-bold text-emerald-600">Terpantau (Portal Walas) ✓</span>
-                </div>
-                <div class="p-2.5 rounded-xl bg-white border border-gray-200 text-center">
-                  <span class="block text-gray-400">Orang Tua</span>
-                  <span class="font-bold text-emerald-600">Terpantau (Portal Orang Tua) ✓</span>
-                </div>
               </div>
             </div>
           </div>
