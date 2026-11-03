@@ -118,27 +118,27 @@ class PresentationSeeder extends Seeder
         $mapelPpl = Subject::firstOrCreate(['code' => 'PPL-01'], ['name' => 'Pemodelan Perangkat Lunak']);
 
         // 7. Jadwal Pelajaran (Hari Ini / Senin-Jumat)
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
         $scheduleItems = [
-            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'time' => '07:00 - 08:30', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelDb->id, 'teacher_id' => $guru2->id, 'time' => '08:30 - 10:00', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelPpl->id, 'teacher_id' => $guru3->id, 'time' => '10:15 - 12:00', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'time' => '12:45 - 14:15', 'room' => 'Lab RPL 1'],
+            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'start' => '07:00', 'end' => '08:30', 'room' => 'Lab RPL 1'],
+            ['subject_id' => $mapelDb->id, 'teacher_id' => $guru2->id, 'start' => '08:30', 'end' => '10:00', 'room' => 'Lab RPL 1'],
+            ['subject_id' => $mapelPpl->id, 'teacher_id' => $guru3->id, 'start' => '10:15', 'end' => '12:00', 'room' => 'Lab RPL 1'],
+            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'start' => '12:45', 'end' => '14:15', 'room' => 'Lab RPL 1'],
         ];
 
         foreach ($days as $day) {
-            foreach ($scheduleItems as $idx => $s) {
+            foreach ($scheduleItems as $s) {
                 Schedule::updateOrCreate(
                     [
                         'class_id' => $class->id,
                         'day' => $day,
-                        'time_slot' => $s['time'],
+                        'start_time' => $s['start'],
+                        'end_time' => $s['end'],
                     ],
                     [
                         'subject_id' => $s['subject_id'],
                         'teacher_id' => $s['teacher_id'],
                         'room' => $s['room'],
-                        'term_id' => $term->id,
                     ]
                 );
             }
