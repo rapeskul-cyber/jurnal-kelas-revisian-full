@@ -17,12 +17,16 @@ use Carbon\Carbon;
 class PresentationSeeder extends Seeder
 {
     /**
-     * Data Set Ringkas Khusus Presentasi:
-     * - 1 Superadmin
-     * - 3 Guru Pengajar & Wali Kelas
-     * - 1 Kelas: XI RPL 1 (Tepat 36 Siswa: 1 Sekre + 35 Siswa)
-     * - 3 Akun Orang Tua
-     * - Jadwal & Sesi Presensi Hari Ini
+     * Data Set Ringkas Khusus Presentasi SMKN 71 Jakarta:
+     * - 1 Superadmin: Dr. H. Bambang Soeprapto, M.Pd
+     * - 3 Guru Pengajar & Wali Kelas:
+     *     1. Nurhayatul Fadilla, S.Pd (Wali Kelas XI RPL 1 & Guru MKK-RPL)
+     *     2. Nurina Kartika Ayu, S.Pd (Wali Kelas XI RPL 2 & Guru PJOK/Kejuruan)
+     *     3. Faradillah Aryani, S.T (Guru Pengajar KIK-RPL / PKK)
+     * - 2 Kelas: XI RPL 1 dan XI RPL 2
+     * - Siswa: 36 siswa per kelas (NIS 1001-1036 dan 2001-2036)
+     * - Jadwal Pelajaran Hari Rabu (Aktif Real-time Sesuai Jadwal SMKN 71)
+     * - Sesi Presensi Mandiri Hari Ini (Auto-Verified)
      */
     public function run(): void
     {
@@ -39,18 +43,23 @@ class PresentationSeeder extends Seeder
             ]
         );
 
-        // 2. Konfigurasi Instansi Resmi
+        // 2. Konfigurasi Instansi Resmi SMKN 71 Jakarta
         Setting::set('school_name', 'SMK Negeri 71 Jakarta', 'general', 'Nama Resmi Sekolah');
         Setting::set('school_npsn', '20104567', 'general', 'Nomor Pokok Sekolah Nasional');
         Setting::set('school_address', 'Jl. Raden Inten II No. 71, Duren Sawit, Jakarta Timur', 'general', 'Alamat Sekolah');
         Setting::set('headmaster_name', 'Dr. H. Bambang Soeprapto, M.Pd', 'general', 'Nama Kepala Sekolah');
         Setting::set('headmaster_nip', '197505101999031002', 'general', 'NIP Kepala Sekolah');
-        Setting::set('default_school_hours', '07:30 - 15:30', 'academic', 'Jam Masuk Sekolah Standar');
+        Setting::set('default_school_hours', '06:45 - 15:00', 'academic', 'Jam Masuk Sekolah Standar');
         Setting::set('attendance_lock_pin', '1234', 'security', 'PIN Buka Kunci Presensi');
 
-        // 3. 1 Kelas Utama: XI RPL 1
-        $class = SchoolClass::updateOrCreate(
+        // 3. Dua Kelas Utama: XI RPL 1 dan XI RPL 2
+        $class1 = SchoolClass::updateOrCreate(
             ['name' => 'XI RPL 1'],
+            ['major' => 'Rekayasa Perangkat Lunak']
+        );
+
+        $class2 = SchoolClass::updateOrCreate(
+            ['name' => 'XI RPL 2'],
             ['major' => 'Rekayasa Perangkat Lunak']
         );
 
@@ -67,70 +76,97 @@ class PresentationSeeder extends Seeder
             ]
         );
 
-        // 5. Tepat 3 Guru Pengajar & Walas
-        // Guru 1: Walas XI RPL 1 + Guru Pemrograman Web
+        // 5. Tepat 3 Guru Pengajar & Walas Sesuai Permintaan
+        // Guru 1: Nurhayatul Fadilla, S.Pd (Walas XI RPL 1 & Guru MKK-RPL)
         $guru1 = User::updateOrCreate(
             ['email' => 'fadilah@smkn71.sch.id'],
             [
-                'name' => 'Fadilah, S.Pd',
+                'name' => 'Nurhayatul Fadilla, S.Pd',
                 'password' => $defaultPassword,
                 'phone' => '081210000002',
-                'nip_nis' => '198503122010012015',
+                'nip_nis' => '19850000000023',
                 'role' => 'GURU_PEMBIMBING',
-                'specialization' => 'Pemrograman Web & Perangkat Bergerak',
-                'class_id' => $class->id,
+                'specialization' => 'Konsentrasi Keahlian RPL & DPK',
+                'class_id' => $class1->id,
                 'is_active' => true,
             ]
         );
-        $class->update(['advisor_id' => $guru1->id]);
+        $class1->update(['advisor_id' => $guru1->id]);
 
-        // Guru 2: Guru Basis Data
+        // Guru 2: Nurina Kartika Ayu, S.Pd (Walas XI RPL 2 & Guru PJOK/Kejuruan)
         $guru2 = User::updateOrCreate(
-            ['email' => 'bambang.guru@smkn71.sch.id'],
+            ['email' => 'nurina@smkn71.sch.id'],
             [
-                'name' => 'Bambang H., M.Kom',
+                'name' => 'Nurina Kartika Ayu, S.Pd',
                 'password' => $defaultPassword,
                 'phone' => '081210000003',
-                'nip_nis' => '198007152006041008',
-                'role' => 'GURU_PENGAJAR',
-                'specialization' => 'Basis Data & Cloud Database',
+                'nip_nis' => '19850000000010',
+                'role' => 'GURU_PEMBIMBING',
+                'specialization' => 'Pendidikan Jasmani Olahraga & Kesehatan (PJOK)',
+                'class_id' => $class2->id,
                 'is_active' => true,
             ]
         );
+        $class2->update(['advisor_id' => $guru2->id]);
 
-        // Guru 3: Guru Pemodelan Perangkat Lunak
+        // Guru 3: Faradillah Aryani, S.T (Guru Pengajar KIK-RPL / PKK)
         $guru3 = User::updateOrCreate(
-            ['email' => 'siti.rahma@smkn71.sch.id'],
+            ['email' => 'faradillah@smkn71.sch.id'],
             [
-                'name' => 'Siti Rahma, S.T',
+                'name' => 'Faradillah Aryani, S.T',
                 'password' => $defaultPassword,
                 'phone' => '081210000004',
-                'nip_nis' => '198811202014022003',
+                'nip_nis' => '19850000000016',
                 'role' => 'GURU_PENGAJAR',
-                'specialization' => 'Pemodelan Perangkat Lunak (PPL)',
+                'specialization' => 'Kreativitas & Inovasi Kejuruan (KIK/PKK)',
                 'is_active' => true,
             ]
         );
 
-        // 6. Mata Pelajaran
-        $mapelWeb = Subject::firstOrCreate(['code' => 'PWEB-01'], ['name' => 'Pemrograman Web']);
-        $mapelDb = Subject::firstOrCreate(['code' => 'BD-01'], ['name' => 'Basis Data']);
-        $mapelPpl = Subject::firstOrCreate(['code' => 'PPL-01'], ['name' => 'Pemodelan Perangkat Lunak']);
+        // 6. Mata Pelajaran Real SMKN 71
+        $mapelMkk = Subject::firstOrCreate(['code' => 'MKK-RPL'], ['name' => 'Mata Pelajaran Konsentrasi Keahlian RPL']);
+        $mapelPkk = Subject::firstOrCreate(['code' => 'KIK-RPL'], ['name' => 'Kreativitas & Inovasi Kejuruan (PKK) RPL']);
+        $mapelPjok = Subject::firstOrCreate(['code' => 'PJOK-RPL'], ['name' => 'Pendidikan Jasmani Olahraga & Kesehatan']);
 
-        // 7. Jadwal Pelajaran (Hari Ini / Senin-Jumat)
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-        $scheduleItems = [
-            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'start' => '07:00', 'end' => '08:30', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelDb->id, 'teacher_id' => $guru2->id, 'start' => '08:30', 'end' => '10:00', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelPpl->id, 'teacher_id' => $guru3->id, 'start' => '10:15', 'end' => '12:00', 'room' => 'Lab RPL 1'],
-            ['subject_id' => $mapelWeb->id, 'teacher_id' => $guru1->id, 'start' => '12:45', 'end' => '14:15', 'room' => 'Lab RPL 1'],
+        // 7. Jadwal Pelajaran Hari Rabu (Rabu / Wednesday) & Hari Lainnya
+        $days = ['Rabu', 'Wednesday', 'Senin', 'Selasa', 'Kamis', 'Jumat', 'Monday', 'Tuesday', 'Thursday', 'Friday'];
+
+        // Jadwal XI RPL 1
+        $schedulesRpl1 = [
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru1->id, 'start' => '06:45', 'end' => '09:45', 'room' => 'R.402'],
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru1->id, 'start' => '10:00', 'end' => '12:15', 'room' => 'R.402'],
+            ['subject_id' => $mapelPkk->id, 'teacher_id' => $guru3->id, 'start' => '12:45', 'end' => '15:00', 'room' => 'R.405'],
+        ];
+
+        // Jadwal XI RPL 2
+        $schedulesRpl2 = [
+            ['subject_id' => $mapelPjok->id, 'teacher_id' => $guru2->id, 'start' => '06:45', 'end' => '08:15', 'room' => 'R.409'],
+            ['subject_id' => $mapelPkk->id, 'teacher_id' => $guru3->id, 'start' => '08:15', 'end' => '09:45', 'room' => 'R.406'],
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru3->id, 'start' => '10:00', 'end' => '12:15', 'room' => 'R.406'],
+            ['subject_id' => $mapelPjok->id, 'teacher_id' => $guru2->id, 'start' => '12:45', 'end' => '14:15', 'room' => 'R.406'],
         ];
 
         foreach ($days as $day) {
-            foreach ($scheduleItems as $s) {
+            foreach ($schedulesRpl1 as $s) {
                 Schedule::updateOrCreate(
                     [
-                        'class_id' => $class->id,
+                        'class_id' => $class1->id,
+                        'day' => $day,
+                        'start_time' => $s['start'],
+                        'end_time' => $s['end'],
+                    ],
+                    [
+                        'subject_id' => $s['subject_id'],
+                        'teacher_id' => $s['teacher_id'],
+                        'room' => $s['room'],
+                    ]
+                );
+            }
+
+            foreach ($schedulesRpl2 as $s) {
+                Schedule::updateOrCreate(
+                    [
+                        'class_id' => $class2->id,
                         'day' => $day,
                         'start_time' => $s['start'],
                         'end_time' => $s['end'],
@@ -144,8 +180,8 @@ class PresentationSeeder extends Seeder
             }
         }
 
-        // 8. Tepat 36 Siswa (1 Sekretaris + 35 Siswa)
-        $studentNames = [
+        // 8. Siswa XI RPL 1 (Tepat 36 Siswa: 1 Sekre Raffi Ahmad + 35 Siswa)
+        $studentNamesRpl1 = [
             'Raffi Ahmad (Sekretaris)',
             'Adinda Salsa Maharani',
             'Ahmad Fauzi Rahman',
@@ -184,8 +220,8 @@ class PresentationSeeder extends Seeder
             'Zaskia Sungkar Paramitha',
         ];
 
-        $studentEntities = [];
-        foreach ($studentNames as $idx => $rawName) {
+        $studentsRpl1 = [];
+        foreach ($studentNamesRpl1 as $idx => $rawName) {
             $num = $idx + 1;
             $nis = 1000 + $num;
             $isSekre = ($idx === 0);
@@ -200,18 +236,82 @@ class PresentationSeeder extends Seeder
                     'phone' => '0812' . str_pad($num, 8, '0', STR_PAD_LEFT),
                     'nip_nis' => (string)$nis,
                     'role' => $isSekre ? 'SEKRETARIS' : 'SISWA',
-                    'class_id' => $class->id,
+                    'class_id' => $class1->id,
                     'is_active' => true,
                 ]
             );
-            $studentEntities[] = $std;
+            $studentsRpl1[] = $std;
         }
 
-        // 9. 3 Akun Orang Tua
+        // 9. Siswa XI RPL 2 (Tepat 36 Siswa: 1 Sekre + 35 Siswa)
+        $studentNamesRpl2 = [
+            'Siti Aisyah (Sekretaris XI RPL 2)',
+            'Bagus Tri Pamungkas',
+            'Bella Safira Wardani',
+            'Chandra Wijaya',
+            'Citra Kirana Lestari',
+            'Dendi Santoso',
+            'Dini Kurniawati',
+            'Eko Prasetyo',
+            'Elvira Devinamira',
+            'Fahri Hamzah Pratama',
+            'Febby Rastanty',
+            'Galih Ginanjar',
+            'Ghea Indrawari',
+            'Gilang Dirga',
+            'Habibi Nur Rahman',
+            'Hana Saraswati',
+            'Hary Tanoe Wicaksono',
+            'Imam Darto',
+            'Intan Nuraini',
+            'Jefri Nichol',
+            'Karin Novilda',
+            'Lukman Sardi',
+            'Luna Maya Safitri',
+            'Marcell Siahaan',
+            'Maudy Ayunda Putri',
+            'Morgan Oey Pratama',
+            'Najwa Shihab Hidayat',
+            'Nicholas Saputra',
+            'Olla Ramlan',
+            'Pevita Pearce',
+            'Reza Rahadian Pratama',
+            'Sule Sutisna',
+            'Tasya Kamila',
+            'Vino G Bastian',
+            'Wulan Guritno',
+            'Yuki Kato Paramitha',
+        ];
+
+        $studentsRpl2 = [];
+        foreach ($studentNamesRpl2 as $idx => $rawName) {
+            $num = $idx + 1;
+            $nis = 2000 + $num;
+            $isSekre = ($idx === 0);
+            $cleanName = str_replace(' (Sekretaris XI RPL 2)', '', $rawName);
+            $email = $isSekre ? 'sekretaris.rpl2@smkn71.sch.id' : ('rpl2.siswa' . $num . '@smkn71.sch.id');
+
+            $std = User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $cleanName,
+                    'password' => $defaultPassword,
+                    'phone' => '0813' . str_pad($num, 8, '0', STR_PAD_LEFT),
+                    'nip_nis' => (string)$nis,
+                    'role' => $isSekre ? 'SEKRETARIS' : 'SISWA',
+                    'class_id' => $class2->id,
+                    'is_active' => true,
+                ]
+            );
+            $studentsRpl2[] = $std;
+        }
+
+        // 10. Akun Orang Tua Siswa
         $parentPairs = [
-            ['email' => 'ortu.raffi@smkn71.sch.id', 'name' => 'Bapak/Ibu Raffi Ahmad', 'std' => $studentEntities[0]],
-            ['email' => 'ortu.ahmad@smkn71.sch.id', 'name' => 'Bapak/Ibu Ahmad Fauzi', 'std' => $studentEntities[2]],
-            ['email' => 'ortu.tiara@smkn71.sch.id', 'name' => 'Bapak/Ibu Tiara Andini', 'std' => $studentEntities[33]],
+            ['email' => 'ortu.raffi@smkn71.sch.id', 'name' => 'Bapak/Ibu Raffi Ahmad', 'std' => $studentsRpl1[0]],
+            ['email' => 'ortu.ahmad@smkn71.sch.id', 'name' => 'Bapak/Ibu Ahmad Fauzi', 'std' => $studentsRpl1[2]],
+            ['email' => 'ortu.tiara@smkn71.sch.id', 'name' => 'Bapak/Ibu Tiara Andini', 'std' => $studentsRpl1[33]],
+            ['email' => 'ortu.aisyah@smkn71.sch.id', 'name' => 'Bapak/Ibu Siti Aisyah', 'std' => $studentsRpl2[0]],
         ];
 
         foreach ($parentPairs as $idx => $p) {
@@ -224,27 +324,28 @@ class PresentationSeeder extends Seeder
                     'nip_nis' => (string)$p['std']->nip_nis,
                     'student_id' => $p['std']->id,
                     'role' => 'ORANG_TUA',
-                    'class_id' => $class->id,
+                    'class_id' => $p['std']->class_id,
                     'is_active' => true,
                 ]
             );
         }
 
-        // 10. Sesi Presensi Mandiri Hari Ini (Auto-Verified)
+        // 11. Sesi Presensi Mandiri Hari Ini (Rabu) untuk Kedua Kelas
         $today = Carbon::today()->toDateString();
-        $session = AttendanceSession::firstOrCreate(
-            ['class_id' => $class->id, 'date' => $today],
+
+        // Presensi Hari Ini XI RPL 1
+        $session1 = AttendanceSession::firstOrCreate(
+            ['class_id' => $class1->id, 'date' => $today],
             [
                 'status' => 'LOCKED',
                 'verification_status' => 'TERVERIFIKASI',
-                'school_hours' => '07:30 - 15:30',
-                'room' => 'Lab RPL 1',
+                'school_hours' => '06:45 - 15:00',
+                'room' => 'R.402',
                 'locked_at' => Carbon::now(),
             ]
         );
 
-        // Buat sample presensi mandiri realistis untuk 36 siswa
-        foreach ($studentEntities as $i => $s) {
+        foreach ($studentsRpl1 as $i => $s) {
             $status = 'HADIR';
             $note = 'Presensi Mandiri Pukul 06:4' . ($i % 10) . ' WIB';
             if ($i === 5) {
@@ -256,7 +357,39 @@ class PresentationSeeder extends Seeder
             }
 
             AttendanceRecord::updateOrCreate(
-                ['session_id' => $session->id, 'student_id' => $s->id],
+                ['session_id' => $session1->id, 'student_id' => $s->id],
+                [
+                    'status' => $status,
+                    'note' => $note,
+                ]
+            );
+        }
+
+        // Presensi Hari Ini XI RPL 2
+        $session2 = AttendanceSession::firstOrCreate(
+            ['class_id' => $class2->id, 'date' => $today],
+            [
+                'status' => 'LOCKED',
+                'verification_status' => 'TERVERIFIKASI',
+                'school_hours' => '06:45 - 15:00',
+                'room' => 'R.406',
+                'locked_at' => Carbon::now(),
+            ]
+        );
+
+        foreach ($studentsRpl2 as $i => $s) {
+            $status = 'HADIR';
+            $note = 'Presensi Mandiri Pukul 06:4' . (($i + 2) % 10) . ' WIB';
+            if ($i === 8) {
+                $status = 'SAKIT';
+                $note = 'Sakit';
+            } elseif ($i === 15) {
+                $status = 'IZIN';
+                $note = 'Izin Urusan Keluarga';
+            }
+
+            AttendanceRecord::updateOrCreate(
+                ['session_id' => $session2->id, 'student_id' => $s->id],
                 [
                     'status' => $status,
                     'note' => $note,
@@ -265,4 +398,3 @@ class PresentationSeeder extends Seeder
         }
     }
 }
-
