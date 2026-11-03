@@ -91,15 +91,51 @@ class AttendanceController extends Controller
             }
         }
 
-        $list = $students->map(function ($std, $idx) use ($recordsMap) {
+        $now = Carbon::now('Asia/Jakarta');
+        $isToday = ($date === $now->toDateString());
+        $isPast = ($date < $now->toDateString());
+
+        // Auto-lock sesi presensi jam 07:00 pagi (atau tanggal lampau) jika masih DRAFT
+        if ($session && $session->status === 'DRAFT' && ($isPast || ($isToday && $now->format('H:i') >= '07:00'))) {
+            $session->update([
+                'status' => 'LOCKED',
+                'verification_status' => 'PENDING',
+                'locked_at' => $session->locked_at ?: $now,
+            ]);
+        }
+
+        $list = $students->map(function ($std, $idx) use ($recordsMap, $isToday, $isPast, $now) {
             $rec = $recordsMap[$std->id] ?? null;
+            if ($rec) {
+                $status = $rec['status'];
+                $note = $rec['note'] ?? null;
+            } else {
+                // Default presensi: Jika belum ada catatan presensi / izin
+                if ($isPast) {
+                    $status = 'ALPHA';
+                    $note = 'Tidak hadir / Tidak melakukan presensi';
+                } elseif ($isToday) {
+                    // Batas 06:30: Jika siswa tidak presensi / izin, otomatis Alpa
+                    if ($now->format('H:i') >= '06:30') {
+                        $status = 'ALPHA';
+                        $note = 'Otomatis Alpa (Melewati batas presensi 06:30 WIB)';
+                    } else {
+                        $status = 'BELUM_ABSEN';
+                        $note = 'Menunggu presensi mandiri siswa';
+                    }
+                } else {
+                    $status = 'BELUM_ABSEN';
+                    $note = null;
+                }
+            }
+
             return [
                 'no' => $idx + 1,
                 'student_id' => $std->id,
                 'name' => $std->name,
                 'nis' => $std->nip_nis ?? '-',
-                'status' => $rec['status'] ?? 'HADIR',
-                'note' => $rec['note'] ?? null,
+                'status' => $status,
+                'note' => $note,
                 'attachment' => $rec['attachment_path'] ?? null,
                 'is_rejected_leave' => !empty($rec['is_rejected_leave']),
             ];
@@ -107,6 +143,7 @@ class AttendanceController extends Controller
 
         // Calculate summary counts
         $total = $list->count();
+        $belumAbsen = $list->where('status', 'BELUM_ABSEN')->count();
         $hadir = $list->where('status', 'HADIR')->count();
         $sakit = $list->where('status', 'SAKIT')->count();
         $izin = $list->where('status', 'IZIN')->count();
@@ -125,6 +162,7 @@ class AttendanceController extends Controller
             ],
             'summary' => [
                 'total' => $total,
+                'belum_absen' => $belumAbsen,
                 'hadir' => $hadir,
                 'sakit' => $sakit,
                 'izin' => $izin,
@@ -176,6 +214,18 @@ class AttendanceController extends Controller
             ], 422);
         }
 
+        $now = Carbon::now('Asia/Jakarta');
+        $timeStr = $now->format('H:i');
+
+        // Batas waktu presensi mandiri jam 06:30 WIB
+        if ($timeStr > '06:30') {
+            return response()->json([
+                'message' => "Batas waktu presensi mandiri (06:30 WIB) telah berakhir (waktu server: {$timeStr} WIB). Status kehadiran Anda otomatis menjadi ALFA. Silakan verifikasi fisik kehadiran Anda ke Wali Kelas atau Sekretaris Kelas di sekolah.",
+                'status' => 'ALPHA',
+                'is_late' => true,
+            ], 422);
+        }
+
         $session = AttendanceSession::where('class_id', $classId)
             ->whereDate('date', $today)
             ->first();
@@ -185,13 +235,12 @@ class AttendanceController extends Controller
                 'class_id' => $classId,
                 'date' => $today,
                 'status' => 'DRAFT',
-                'verification_status' => 'TERVERIFIKASI',
+                'verification_status' => 'BELUM_KONFIRMASI',
                 'school_hours' => '07:30 - 15:30',
                 'room' => 'Lab RPL Industri',
             ]);
         }
 
-        $timeStr = Carbon::now()->format('H:i');
         $customNote = trim((string) $request->input('note', ''));
         $note = $customNote !== ''
             ? "Presensi Mandiri ({$timeStr} WIB) - {$customNote}"
@@ -421,8 +470,8 @@ class AttendanceController extends Controller
     public function confirmSession(Request $request)
     {
         $user = $request->user();
-        if (!in_array($user->role, ['GURU_PENGAJAR', 'GURU_PEMBIMBING'])) {
-            return response()->json(['message' => 'Hanya Guru Pengajar atau Wali Kelas yang berhak mengesahkan presensi.'], 403);
+        if (!in_array($user->role, ['GURU_PEMBIMBING', 'SUPERADMIN'])) {
+            return response()->json(['message' => 'Hanya Wali Kelas (Guru Pembimbing) atau Superadmin yang berhak mengesahkan presensi harian kelas ini.'], 403);
         }
 
         $classId = $request->input('class_id', 1);

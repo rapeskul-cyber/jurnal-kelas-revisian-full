@@ -14,11 +14,15 @@
         </div>
       </div>
 
-      <!-- 5 Summary Metric Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <!-- 6 Summary Metric Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="bg-white border border-gray-150 rounded-2xl p-4 shadow-2xs">
           <p class="text-[11px] font-semibold text-gray-400 uppercase">Total Siswa</p>
           <p class="text-2xl font-bold text-gray-900 mt-1">{{ summary.total }}</p>
+        </div>
+        <div class="bg-white border border-gray-150 rounded-2xl p-4 shadow-2xs">
+          <p class="text-[11px] font-semibold text-slate-500 uppercase">Belum Absen</p>
+          <p class="text-2xl font-bold text-slate-600 mt-1">{{ summary.belumAbsen }}</p>
         </div>
         <div class="bg-white border border-gray-150 rounded-2xl p-4 shadow-2xs">
           <p class="text-[11px] font-semibold text-emerald-600 uppercase">Hadir</p>
@@ -38,19 +42,55 @@
         </div>
       </div>
 
-      <!-- Action Bar: Tandai Semua Hadir, Refresh & Search -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-2 w-full sm:w-auto">
+      <!-- Action Bar: Date Selector, Ekspor Word/Excel, Refresh & Search -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <!-- Date Selector & Quick Nav -->
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div class="flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-xl shadow-2xs">
+            <Calendar class="w-4 h-4 text-gray-500" />
+            <input
+              type="date"
+              v-model="selectedDate"
+              @change="onDateChanged"
+              class="text-xs font-semibold text-gray-800 bg-transparent focus:outline-none cursor-pointer"
+            />
+          </div>
           <button
             type="button"
-            @click="markAllPresent"
-            :disabled="isLoading || students.length === 0"
-            class="flex-1 sm:flex-initial px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-[0.99] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition min-h-[44px]"
+            @click="setToday"
+            class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-xl transition cursor-pointer"
           >
-            <Check class="w-4 h-4" />
-            <span>Tandai Semua Hadir</span>
+            Hari Ini
+          </button>
+        </div>
+
+        <!-- Export Buttons & Refresh & Search -->
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <!-- Ekspor Excel -->
+          <button
+            type="button"
+            @click="exportExcel"
+            :disabled="isLoading || students.length === 0"
+            class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition disabled:opacity-50 min-h-[44px]"
+            title="Ekspor rekap harian ke Excel"
+          >
+            <FileSpreadsheet class="w-4 h-4" />
+            <span>Ekspor Excel</span>
           </button>
 
+          <!-- Ekspor Word -->
+          <button
+            type="button"
+            @click="exportWord"
+            :disabled="isLoading || students.length === 0"
+            class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition disabled:opacity-50 min-h-[44px]"
+            title="Ekspor agenda presensi ke Word"
+          >
+            <FileText class="w-4 h-4" />
+            <span>Ekspor Word</span>
+          </button>
+
+          <!-- Refresh -->
           <button
             type="button"
             @click="() => loadAttendance(false)"
@@ -59,18 +99,18 @@
             title="Segarkan data presensi"
           >
             <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin text-primary': isRefreshing }" />
-            <span class="hidden sm:inline text-[11px] font-medium">{{ isRefreshing ? 'Menyinkronkan...' : 'Segarkan' }}</span>
           </button>
-        </div>
 
-        <div class="relative w-full sm:w-72">
-          <Search class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Cari nama siswa..."
-            class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs min-h-[44px]"
-          />
+          <!-- Search -->
+          <div class="relative w-full sm:w-60">
+            <Search class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari nama siswa..."
+              class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs min-h-[44px]"
+            />
+          </div>
         </div>
       </div>
 
@@ -95,7 +135,13 @@
                   <p class="text-xs text-gray-500 font-mono mt-0.5 ml-8">NIS: {{ student.nis }}</p>
                 </div>
                 <span
-                  v-if="student.is_rejected_leave"
+                  v-if="student.status === 'BELUM_ABSEN'"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200 shrink-0"
+                >
+                  Belum Absen
+                </span>
+                <span
+                  v-else-if="student.is_rejected_leave"
                   class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shrink-0"
                 >
                   Izin Ditolak
@@ -209,7 +255,15 @@
                   <td class="py-3 text-gray-500 whitespace-nowrap">{{ student.nis }}</td>
                   <!-- Segmented Buttons for 4 statuses -->
                   <td class="py-3 whitespace-nowrap text-center">
-                    <div class="inline-flex p-1 bg-gray-100 rounded-xl gap-1">
+                    <div class="inline-flex items-center gap-1.5">
+                      <span
+                        v-if="student.status === 'BELUM_ABSEN'"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200 shrink-0"
+                        title="Siswa belum melakukan presensi mandiri"
+                      >
+                        Belum Absen
+                      </span>
+                      <div class="inline-flex p-1 bg-gray-100 rounded-xl gap-1">
                       <button
                         type="button"
                         @click="setStudentStatus(student, 'HADIR')"
@@ -250,6 +304,7 @@
                       >
                         ALFA
                       </button>
+                    </div>
                     </div>
                   </td>
                   <!-- Note Input -->
@@ -320,12 +375,12 @@
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">Guru Pengajar</span>
+              <span class="text-gray-600">Wali Kelas</span>
               <span
                 class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                 :class="verificationStatus === 'TERVERIFIKASI' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'"
               >
-                {{ verificationStatus === 'TERVERIFIKASI' ? 'Terverifikasi' : 'Menunggu Pengesahan' }}
+                {{ verificationStatus === 'TERVERIFIKASI' ? 'Disahkan Walas' : 'Menunggu Pengesahan' }}
               </span>
             </div>
             <p v-if="sessionStatus === 'LOCKED'" class="text-[11px] text-gray-500 italic pt-1 border-t border-gray-50">
@@ -333,10 +388,10 @@
             </p>
           </div>
 
-          <!-- Aksi untuk Guru Pengajar / Pembimbing: Konfirmasi Langsung -->
-          <div v-if="authStore.user?.role === 'GURU_PENGAJAR' || authStore.user?.role === 'GURU_PEMBIMBING'" class="space-y-3 pt-2 border-t border-gray-100">
+          <!-- Aksi untuk Wali Kelas (Guru Pembimbing) / Superadmin: Pengesahan -->
+          <div v-if="authStore.user?.role === 'GURU_PEMBIMBING' || authStore.user?.role === 'SUPERADMIN'" class="space-y-3 pt-2 border-t border-gray-100">
             <div v-if="verificationStatus !== 'TERVERIFIKASI'">
-              <p class="text-[11px] text-gray-500 mb-2">Sebagai Guru Pengajar/Pembimbing, Anda dapat mengesahkan presensi harian kelas ini secara langsung:</p>
+              <p class="text-[11px] text-gray-500 mb-2">Sebagai Wali Kelas, Anda mengesahkan dan memverifikasi presensi harian kelas perwalian ini:</p>
               <button
                 type="button"
                 @click="handleConfirmTeacher"
@@ -349,7 +404,22 @@
             </div>
             <div v-else class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
               <Check class="w-4 h-4 text-emerald-600" />
-              <span>Presensi harian ini telah Anda verifikasi resmi.</span>
+              <span>Presensi harian telah disahkan resmi oleh Wali Kelas.</span>
+            </div>
+          </div>
+
+          <!-- Notice untuk Guru Pengajar: Diarahkan ke Jurnal KBM -->
+          <div v-else-if="authStore.user?.role === 'GURU_PENGAJAR'" class="space-y-3 pt-2 border-t border-gray-100">
+            <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs space-y-2">
+              <p class="font-bold text-blue-900">Presensi Jam Mata Pelajaran</p>
+              <p class="text-[11px] text-blue-800 leading-relaxed">Presensi harian kelas disahkan oleh Wali Kelas. Sebagai Guru Pengajar, Anda memverifikasi kehadiran siswa pada jam tatap muka Anda di halaman Agenda & Jurnal KBM.</p>
+              <NuxtLink
+                to="/jurnal-materi"
+                class="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition shadow-2xs"
+              >
+                <span>Buka Jurnal KBM</span>
+                <ArrowRight class="w-3.5 h-3.5" />
+              </NuxtLink>
             </div>
           </div>
 
@@ -410,6 +480,10 @@ import {
   Lock,
   RefreshCw,
   AlertCircle,
+  Calendar,
+  FileSpreadsheet,
+  FileText,
+  ArrowRight,
 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
@@ -452,13 +526,25 @@ const displayClassName = computed(() => {
   return sessionClassName.value || authStore.user?.guided_class?.name || authStore.user?.school_class?.name || 'Kelas Industri'
 })
 
+const selectedDate = ref((route.query.date as string) || getLocalDateString())
+
 const targetDate = computed(() => {
-  return (route.query.date as string) || getLocalDateString()
+  return selectedDate.value || getLocalDateString()
 })
 
 const cacheKey = computed(() => `cache_presensi_class_${targetClassId.value}`)
 
-const dateFormatted = ref(formatReadableDate(targetDate.value))
+const dateFormatted = ref(formatReadableDate(selectedDate.value))
+
+function onDateChanged() {
+  dateFormatted.value = formatReadableDate(selectedDate.value)
+  loadAttendance(false)
+}
+
+function setToday() {
+  selectedDate.value = getLocalDateString()
+  onDateChanged()
+}
 const searchQuery = ref('')
 const pin = ref('')
 const sessionStatus = ref('DRAFT')
@@ -497,11 +583,12 @@ if (process.client) {
 
 const summary = computed(() => {
   const total = students.value.length
+  const belumAbsen = students.value.filter(s => s.status === 'BELUM_ABSEN' || !s.status).length
   const hadir = students.value.filter(s => s.status === 'HADIR').length
   const sakit = students.value.filter(s => s.status === 'SAKIT').length
   const izin = students.value.filter(s => s.status === 'IZIN').length
   const alpha = students.value.filter(s => s.status === 'ALPHA').length
-  return { total, hadir, sakit, izin, alpha }
+  return { total, belumAbsen, hadir, sakit, izin, alpha }
 })
 
 const filteredStudents = computed(() => {
@@ -514,10 +601,151 @@ function setStudentStatus(student: any, status: string) {
   student.status = status
 }
 
-function markAllPresent() {
-  students.value.forEach(s => {
-    s.status = 'HADIR'
-  })
+function exportExcel() {
+  if (!students.value || students.value.length === 0) {
+    showToast('Tidak ada data siswa untuk diekspor.', true)
+    return
+  }
+
+  const dateStr = selectedDate.value
+  const className = displayClassName.value
+
+  const headers = ['No', 'Nama Siswa', 'NIS / NISN', 'Status Kehadiran', 'Keterangan']
+  const rows = students.value.map((s, idx) => [
+    idx + 1,
+    `"${(s.name || '').replace(/"/g, '""')}"`,
+    `"${(s.nis || '').replace(/"/g, '""')}"`,
+    `"${s.status === 'BELUM_ABSEN' ? 'Belum Absen' : (s.status || '-')}"`,
+    `"${(s.note || '').replace(/"/g, '""')}"`
+  ])
+
+  const metaRows = [
+    `"AGENDA PRESENSI KELAS - SMK NEGERI 71 JAKARTA"`,
+    `"Kelas: ${className}"`,
+    `"Tanggal: ${formatReadableDate(dateStr)}"`,
+    `"Total: ${summary.value.total}; Hadir: ${summary.value.hadir}; Sakit: ${summary.value.sakit}; Izin: ${summary.value.izin}; Alfa: ${summary.value.alpha}; Belum Absen: ${summary.value.belumAbsen}"`,
+    ''
+  ]
+
+  const csvRows = ['sep=;', ...metaRows, headers.join(';'), ...rows.map(e => e.join(';'))].join('\r\n')
+  const blob = new Blob(['\uFEFF' + csvRows], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `agenda_presensi_${className.replace(/\s+/g, '_')}_${dateStr}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+  showToast('File Excel agenda presensi berhasil diunduh.')
+}
+
+function exportWord() {
+  if (!students.value || students.value.length === 0) {
+    showToast('Tidak ada data siswa untuk diekspor.', true)
+    return
+  }
+
+  const dateStr = selectedDate.value
+  const className = displayClassName.value
+  const formattedDate = formatReadableDate(dateStr)
+
+  const rowsHtml = students.value.map((s, idx) => `
+    <tr>
+      <td style="border:1px solid #ddd; padding:8px; text-align:center;">${idx + 1}</td>
+      <td style="border:1px solid #ddd; padding:8px;">${s.name || '-'}</td>
+      <td style="border:1px solid #ddd; padding:8px; text-align:center;">${s.nis || '-'}</td>
+      <td style="border:1px solid #ddd; padding:8px; text-align:center; font-weight:bold;">${s.status === 'BELUM_ABSEN' ? 'Belum Absen' : (s.status || '-')}</td>
+      <td style="border:1px solid #ddd; padding:8px;">${s.note || '-'}</td>
+    </tr>
+  `).join('')
+
+  const wordHtml = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset='utf-8'>
+      <title>Agenda Presensi Kelas</title>
+      <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; color: #333; line-height: 1.4; }
+        .kop { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .kop h2 { margin: 0; font-size: 16pt; color: #0f47ad; }
+        .kop h3 { margin: 5px 0 0 0; font-size: 13pt; }
+        .meta-table { width: 100%; margin-bottom: 15px; }
+        .meta-table td { padding: 4px 0; font-size: 10.5pt; }
+        .summary-box { background: #f0f4ff; border: 1px solid #c7d7fe; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+        table.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.data-table th { background: #0f47ad; color: #fff; border: 1px solid #0f47ad; padding: 8px; font-size: 10pt; text-align: center; }
+        .ttd-table { width: 100%; margin-top: 30px; }
+        .ttd-table td { text-align: center; width: 50%; padding-top: 10px; font-size: 11pt; }
+      </style>
+    </head>
+    <body>
+      <div class="kop">
+        <h2>SMK NEGERI 71 JAKARTA</h2>
+        <h3>AGENDA & REKAPITULASI PRESENSI HARIAN KELAS</h3>
+        <p style="margin:2px 0 0 0; font-size:9pt; color:#666;">Sistem Informasi Jurnal Kelas Digital Mandiri</p>
+      </div>
+
+      <table class="meta-table">
+        <tr>
+          <td style="width:15%;"><strong>Kelas</strong></td>
+          <td style="width:35%;">: ${className}</td>
+          <td style="width:20%;"><strong>Hari / Tanggal</strong></td>
+          <td style="width:30%;">: ${formattedDate}</td>
+        </tr>
+        <tr>
+          <td><strong>Jam Sekolah</strong></td>
+          <td>: 07:30 - 15:30 WIB</td>
+          <td><strong>Status Verifikasi</strong></td>
+          <td>: ${verificationStatus.value === 'TERVERIFIKASI' ? 'Disahkan Wali Kelas' : 'Menunggu Konfirmasi'}</td>
+        </tr>
+      </table>
+
+      <div class="summary-box">
+        <strong>Ringkasan Kehadiran:</strong> 
+        Total: ${summary.value.total} Siswa | 
+        Hadir: ${summary.value.hadir} | 
+        Sakit: ${summary.value.sakit} | 
+        Izin: ${summary.value.izin} | 
+        Alfa: ${summary.value.alpha} | 
+        Belum Absen: ${summary.value.belumAbsen}
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">No</th>
+            <th style="width:35%;">Nama Lengkap Siswa</th>
+            <th style="width:20%;">NIS / NISN</th>
+            <th style="width:15%;">Status</th>
+            <th style="width:25%;">Keterangan / Waktu</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <table class="ttd-table">
+        <tr>
+          <td>Mengetahui,<br><strong>Wali Kelas</strong><br><br><br><br>( .................................................... )</td>
+          <td>Jakarta, ${formattedDate}<br><strong>Sekretaris Kelas</strong><br><br><br><br>( ${authStore.user?.name || '....................................................'} )</td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `
+
+  const blob = new Blob(['\uFEFF' + wordHtml], { type: 'application/msword;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `agenda_presensi_${className.replace(/\s+/g, '_')}_${dateStr}.doc`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+  showToast('File Word agenda presensi berhasil diunduh.')
 }
 
 function getAuthToken(): string | null {
@@ -559,7 +787,7 @@ async function loadAttendance(silent = false) {
       headers: { Authorization: `Bearer ${token}` },
       params: {
         class_id: targetClassId.value,
-        date: targetDate.value
+        date: selectedDate.value
       }
     })
 
@@ -607,7 +835,7 @@ async function handleDraft() {
       headers: { Authorization: `Bearer ${token}` },
       body: {
         class_id: Number(targetClassId.value) || 1,
-        date: targetDate.value,
+        date: selectedDate.value,
         records: students.value.map(s => ({ student_id: s.student_id, status: s.status, note: s.note }))
       }
     })
@@ -616,7 +844,7 @@ async function handleDraft() {
     if (process.client) {
       localStorage.setItem(cacheKey.value, JSON.stringify({
         students: students.value,
-        session: { status: 'DRAFT', verification_status: verificationStatus.value, date: targetDate.value }
+        session: { status: 'DRAFT', verification_status: verificationStatus.value, date: selectedDate.value }
       }))
     }
     loadAttendance(true)
@@ -644,7 +872,7 @@ async function handleLock() {
       headers: { Authorization: `Bearer ${token}` },
       body: {
         class_id: Number(targetClassId.value) || 1,
-        date: targetDate.value,
+        date: selectedDate.value,
         pin: pin.value,
         records: students.value.map(s => ({ student_id: s.student_id, status: s.status, note: s.note }))
       }
