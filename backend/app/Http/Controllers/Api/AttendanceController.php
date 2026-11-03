@@ -95,13 +95,15 @@ class AttendanceController extends Controller
         $isToday = ($date === $now->toDateString());
         $isPast = ($date < $now->toDateString());
 
-        // Auto-lock sesi presensi jam 07:00 pagi (atau tanggal lampau) jika masih DRAFT
-        if ($session && $session->status === 'DRAFT' && ($isPast || ($isToday && $now->format('H:i') >= '07:00'))) {
-            $session->update([
-                'status' => 'LOCKED',
-                'verification_status' => 'PENDING',
-                'locked_at' => $session->locked_at ?: $now,
-            ]);
+        // Auto-lock sesi presensi jam 07:00 pagi (atau tanggal lampau) -> Auto-detect verified oleh sistem
+        if ($session && ($isPast || ($isToday && $now->format('H:i') >= '07:00'))) {
+            if ($session->status !== 'LOCKED' || in_array($session->verification_status, ['BELUM_KONFIRMASI', 'PENDING'])) {
+                $session->update([
+                    'status' => 'LOCKED',
+                    'verification_status' => 'TERVERIFIKASI',
+                    'locked_at' => $session->locked_at ?: $now,
+                ]);
+            }
         }
 
         $list = $students->map(function ($std, $idx) use ($recordsMap, $isToday, $isPast, $now) {
@@ -612,7 +614,7 @@ class AttendanceController extends Controller
             if ($leaveForDate && $leaveForDate->status === 'APPROVED') {
                 $status = ($leaveForDate->type === 'SAKIT') ? 'SAKIT' : 'IZIN';
                 $note = $isParent
-                    ? ($status === 'SAKIT' ? 'Sakit (Surat Dokter Terverifikasi)' : 'Izin Resmi')
+                    ? ($status === 'SAKIT' ? 'Sakit' : 'Izin')
                     : ('Surat Izin ' . $leaveForDate->type . ' disetujui Wali Kelas: ' . ($leaveForDate->reason ?: '-'));
             } elseif ($leaveForDate && $leaveForDate->status === 'REJECTED') {
                 // Izin ditolak! Hanya berstatus HADIR jika diverifikasi langsung di kelas oleh Sekretaris / Wali Kelas
@@ -623,33 +625,33 @@ class AttendanceController extends Controller
 
                 if ($verifiedInClass) {
                     $status = 'HADIR';
-                    $note = $isParent ? 'Hadir di Sekolah' : ($rec->note ?: 'Diverifikasi Hadir di Kelas oleh Sekretaris Kelas');
+                    $note = $isParent ? 'Hadir' : ($rec->note ?: 'Diverifikasi Hadir di Kelas oleh Sekretaris Kelas');
                 } else {
                     $status = 'DITOLAK';
                     $reason = $leaveForDate->review_note ? ": {$leaveForDate->review_note}" : '';
-                    $note = $isParent ? 'Surat Izin Ditolak' : "Surat Izin Ditolak Wali Kelas{$reason} • Wajib Verifikasi di Kelas";
+                    $note = $isParent ? 'Izin Ditolak' : "Surat Izin Ditolak Wali Kelas{$reason} • Wajib Verifikasi di Kelas";
                 }
             } elseif ($leaveForDate && $leaveForDate->status === 'PENDING') {
                 $status = 'PENDING';
-                $note = $isParent ? 'Menunggu Konfirmasi Wali Kelas' : 'Surat Izin diajukan, menunggu persetujuan Wali Kelas';
+                $note = $isParent ? 'Menunggu Konfirmasi' : 'Surat Izin diajukan, menunggu persetujuan Wali Kelas';
             } elseif ($rec) {
                 $status = $rec->status;
                 if ($isParent) {
-                    if ($status === 'HADIR') $note = 'Hadir di Sekolah';
+                    if ($status === 'HADIR') $note = 'Hadir';
                     elseif ($status === 'SAKIT') $note = 'Sakit';
                     elseif ($status === 'IZIN') $note = 'Izin';
-                    elseif ($status === 'ALPHA') $note = 'Tidak Hadir (Tanpa Keterangan)';
-                    else $note = $rec->note ?: '-';
+                    elseif ($status === 'ALPHA') $note = 'Alpa';
+                    else $note = $status;
                 } else {
                     $note = $rec->note ?: 'Presensi Mandiri Terverifikasi';
                 }
             } else {
                 if ($session->status === 'DRAFT' && $dateStr === $todayStr) {
                     $status = 'BELUM_PRESENSI';
-                    $note = $isParent ? 'Menunggu Presensi Mandiri' : 'Belum melakukan presensi mandiri hari ini';
+                    $note = $isParent ? 'Belum Presensi' : 'Belum melakukan presensi mandiri hari ini';
                 } else {
                     $status = 'ALPHA';
-                    $note = $isParent ? 'Tidak Hadir (Tanpa Keterangan)' : 'Tidak hadir tanpa keterangan';
+                    $note = $isParent ? 'Alpa' : 'Tidak hadir tanpa keterangan';
                 }
             }
 

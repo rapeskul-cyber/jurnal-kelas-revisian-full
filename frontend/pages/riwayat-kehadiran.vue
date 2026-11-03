@@ -186,7 +186,8 @@
               <StatusBadge :status="item.status" />
             </div>
 
-            <div class="p-3 bg-gray-50/70 rounded-xl space-y-1.5 text-xs text-gray-600">
+            <!-- Detail Siswa Biasa -->
+            <div v-if="authStore.user?.role !== 'ORANG_TUA'" class="p-3 bg-gray-50/70 rounded-xl space-y-1.5 text-xs text-gray-600">
               <div class="flex items-center justify-between">
                 <span class="text-gray-400">Mapel:</span>
                 <span class="font-bold text-gray-800">{{ item.subject }}</span>
@@ -201,7 +202,13 @@
               </div>
             </div>
 
-            <p v-if="item.note" class="text-xs text-gray-500 italic">{{ item.note }}</p>
+            <!-- Tampilan Ringkas Khusus Orang Tua -->
+            <div v-else class="flex items-center justify-between text-xs text-gray-700 pt-1">
+              <span class="text-gray-400">Keterangan:</span>
+              <span class="font-semibold text-gray-900">{{ item.note || '-' }}</span>
+            </div>
+
+            <p v-if="authStore.user?.role !== 'ORANG_TUA' && item.note" class="text-xs text-gray-500 italic">{{ item.note }}</p>
           </div>
           <div v-if="filteredDetails.length === 0" class="py-8 text-center text-gray-400 text-xs">
             Tidak ada catatan presensi untuk filter ini.
@@ -214,8 +221,8 @@
             <thead>
               <tr class="text-gray-400 uppercase text-[10px] border-b border-gray-100 bg-gray-50/50">
                 <th class="py-3 px-3 font-semibold">Hari / Tanggal</th>
-                <th class="py-3 px-3 font-semibold">Ruangan</th>
-                <th class="py-3 px-3 font-semibold">Mata Pelajaran</th>
+                <th v-if="authStore.user?.role !== 'ORANG_TUA'" class="py-3 px-3 font-semibold">Ruangan</th>
+                <th v-if="authStore.user?.role !== 'ORANG_TUA'" class="py-3 px-3 font-semibold">Mata Pelajaran</th>
                 <th class="py-3 px-3 font-semibold">Jam Sekolah</th>
                 <th class="py-3 px-3 font-semibold">Status</th>
                 <th class="py-3 px-3 font-semibold">Keterangan</th>
@@ -224,18 +231,18 @@
             <tbody class="divide-y divide-gray-50">
               <tr v-for="item in filteredDetails" :key="item.id" class="hover:bg-gray-50/50">
                 <td class="py-3.5 px-3 font-semibold text-gray-900">{{ item.day_date }}</td>
-                <td class="py-3.5 px-3">
+                <td v-if="authStore.user?.role !== 'ORANG_TUA'" class="py-3.5 px-3">
                   <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700">
                     {{ item.room }}
                   </span>
                 </td>
-                <td class="py-3.5 px-3 text-gray-700">{{ item.subject }}</td>
+                <td v-if="authStore.user?.role !== 'ORANG_TUA'" class="py-3.5 px-3 text-gray-700">{{ item.subject }}</td>
                 <td class="py-3.5 px-3 text-gray-400">{{ item.hours }}</td>
                 <td class="py-3.5 px-3"><StatusBadge :status="item.status" /></td>
-                <td class="py-3.5 px-3 text-gray-400">{{ item.note }}</td>
+                <td class="py-3.5 px-3 text-gray-700 font-medium">{{ item.note || '-' }}</td>
               </tr>
               <tr v-if="filteredDetails.length === 0">
-                <td colspan="6" class="py-8 text-center text-gray-400 text-xs">
+                <td :colspan="authStore.user?.role === 'ORANG_TUA' ? 4 : 6" class="py-8 text-center text-gray-400 text-xs">
                   Tidak ada catatan presensi untuk filter ini.
                 </td>
               </tr>

@@ -32,15 +32,10 @@
           <!-- Banner Notifikasi: Jika siswa sudah memiliki izin yang DISETUJUI hari ini -->
           <div
             v-if="activeApprovedLeaveToday"
-            class="p-4 rounded-2xl bg-blue-50 border-2 border-primary/30 space-y-2 text-slate-800"
+            class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center gap-2 shadow-2xs"
           >
-            <div class="flex items-center gap-2">
-              <CheckCircle2Icon class="w-5 h-5 text-primary shrink-0" />
-              <h4 class="font-bold text-xs text-primary">Surat Izin Hari Ini Telah Disetujui Wali Kelas</h4>
-            </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-              Anda telah memiliki izin resmi berstatus <strong>DISETUJUI ({{ activeApprovedLeaveToday.type }})</strong> untuk tanggal <strong>{{ activeApprovedLeaveToday.start_date }} s/d {{ activeApprovedLeaveToday.end_date }}</strong>. Status absensi Anda telah tercatat otomatis tidak masuk sekolah.
-            </p>
+            <CheckCircle2Icon class="w-4 h-4 text-primary shrink-0" />
+            <span>Izin aktif disetujui: <strong>{{ activeApprovedLeaveToday.type }}</strong> ({{ activeApprovedLeaveToday.start_date }} s/d {{ activeApprovedLeaveToday.end_date }})</span>
           </div>
 
           <form @submit.prevent="handleSubmit" class="space-y-4">

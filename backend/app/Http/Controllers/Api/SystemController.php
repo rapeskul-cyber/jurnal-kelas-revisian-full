@@ -207,8 +207,12 @@ class SystemController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
+        $msg = $count > 0
+            ? "Pengumuman berhasil disiarkan kepada {$count} penerima" . ($waSentCount > 0 ? " ({$waSentCount} via WhatsApp)" : "")
+            : "Siaran berhasil disimpan dalam riwayat. Belum ada akun pengguna aktif untuk target ini (0 penerima).";
+
         return response()->json([
-            'message' => "Pengumuman berhasil disiarkan kepada {$count} penerima" . ($waSentCount > 0 ? " ({$waSentCount} via WhatsApp)" : ""),
+            'message' => $msg,
             'broadcast' => $broadcast,
             'recipients_count' => $count,
         ]);

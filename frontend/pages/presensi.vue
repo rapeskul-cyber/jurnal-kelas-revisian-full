@@ -6,14 +6,6 @@
     />
 
     <main class="px-4 sm:px-8 pb-8 space-y-5">
-      <!-- Banner Sinkronisasi Otomatis Presensi Mandiri Siswa -->
-      <div class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-        <div>
-          <span class="font-bold">Sinkronisasi Presensi Mandiri Aktif:</span>
-          Data di bawah terisi otomatis dari <strong>Presensi Mandiri Siswa</strong> dan <strong>Surat Izin</strong> yang telah disetujui Wali Kelas. Sekretaris / Wali Kelas cukup memantau atau mengoreksi bila diperlukan.
-        </div>
-      </div>
-
       <!-- 6 Summary Metric Cards -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="bg-white border border-gray-150 rounded-2xl p-4 shadow-2xs">
@@ -391,7 +383,7 @@
           <!-- Aksi untuk Wali Kelas (Guru Pembimbing) / Superadmin: Pengesahan -->
           <div v-if="authStore.user?.role === 'GURU_PEMBIMBING' || authStore.user?.role === 'SUPERADMIN'" class="space-y-3 pt-2 border-t border-gray-100">
             <div v-if="verificationStatus !== 'TERVERIFIKASI'">
-              <p class="text-[11px] text-gray-500 mb-2">Sebagai Wali Kelas, Anda mengesahkan dan memverifikasi presensi harian kelas perwalian ini:</p>
+              
               <button
                 type="button"
                 @click="handleConfirmTeacher"
@@ -413,8 +405,8 @@
                 <CheckCircle2 class="w-4 h-4 text-primary shrink-0" />
                 <span>Hak Prioritas Wali Kelas</span>
               </div>
-              <p class="text-[11px] text-gray-600 leading-relaxed">
-                Jika ada siswa yang memberi info sakit/izin melebihi batas waktu, Wali Kelas berhak mengoreksi data kehadiran dan langsung mengunci ulang presensi kelas binaannya.
+              <p class="text-[11px] text-gray-500">
+                Koreksi status siswa jika terdapat info susulan.
               </p>
               <button
                 type="button"
@@ -432,7 +424,7 @@
           <div v-else-if="authStore.user?.role === 'GURU_PENGAJAR'" class="space-y-3 pt-2 border-t border-gray-100">
             <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs space-y-2">
               <p class="font-bold text-blue-900">Presensi Jam Mata Pelajaran</p>
-              <p class="text-[11px] text-blue-800 leading-relaxed">Presensi harian kelas disahkan oleh Wali Kelas. Sebagai Guru Pengajar, Anda memverifikasi kehadiran siswa pada jam tatap muka Anda di halaman Agenda & Jurnal KBM.</p>
+              <p class="text-[11px] text-blue-800 leading-relaxed">Verifikasi kehadiran tatap muka dilakukan pada halaman Agenda & Jurnal KBM.</p>
               <NuxtLink
                 to="/jurnal-materi"
                 class="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition shadow-2xs"

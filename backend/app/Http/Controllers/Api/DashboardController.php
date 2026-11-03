@@ -282,25 +282,25 @@ class DashboardController extends Controller
 
         if ($latestLeave && $latestLeave->status === 'APPROVED') {
             $todayStatus = $latestLeave->type;
-            $todayNote = 'Dispensasi Surat Izin Resmi (' . $latestLeave->type . ') Disetujui Wali Kelas';
+            $todayNote = $latestLeave->type === 'SAKIT' ? 'Sakit' : 'Izin';
             $isLeaveApproved = true;
         } elseif ($latestLeave && $latestLeave->status === 'REJECTED') {
             $isLeaveRejected = true;
             $rejectionReason = $latestLeave->review_note ?: 'Tidak memenuhi syarat izin sekolah.';
             if ($todayRecord && $todayRecord->status === 'HADIR' && !str_contains($todayRecord->note ?? '', 'Presensi Mandiri Pukul')) {
                 $todayStatus = 'HADIR';
-                $todayNote = $todayRecord->note ?: 'Diverifikasi Hadir di Kelas oleh Sekretaris Kelas';
+                $todayNote = 'Hadir';
             } else {
                 $todayStatus = 'DITOLAK';
-                $todayNote = 'Permohonan surat izin ditolak oleh Wali Kelas ("' . $rejectionReason . '"). Siswa wajib hadir di sekolah.';
+                $todayNote = 'Izin Ditolak';
             }
         } elseif ($latestLeave && $latestLeave->status === 'PENDING') {
             $hasPendingLeave = true;
             $todayStatus = 'PENDING';
-            $todayNote = 'Permohonan surat izin (' . $latestLeave->type . ') sedang menunggu verifikasi Wali Kelas.';
+            $todayNote = 'Menunggu Konfirmasi';
         } elseif ($todayRecord) {
             $todayStatus = $todayRecord->status;
-            $todayNote = $todayRecord->note ?: 'Presensi Mandiri Terverifikasi';
+            $todayNote = $todayRecord->status === 'HADIR' ? 'Hadir' : ($todayRecord->status === 'SAKIT' ? 'Sakit' : ($todayRecord->status === 'IZIN' ? 'Izin' : 'Alpa'));
             $isLeaveApproved = in_array($todayRecord->status, ['SAKIT', 'IZIN']);
         }
 
@@ -311,11 +311,13 @@ class DashboardController extends Controller
                 ->take(6)
                 ->get()
                 ->map(function ($rec) {
+                    $st = $rec->status;
+                    $simpleNote = $st === 'HADIR' ? 'Hadir' : ($st === 'SAKIT' ? 'Sakit' : ($st === 'IZIN' ? 'Izin' : 'Alpa'));
                     return [
                         'id' => $rec->id,
                         'date' => Carbon::parse($rec->session->date)->translatedFormat('l, d M Y'),
-                        'status' => $rec->status,
-                        'note' => $rec->note ?: 'Hadir Tepat Waktu',
+                        'status' => $st,
+                        'note' => $simpleNote,
                         'school_hours' => $rec->session->school_hours ?? '07:30 - 15:30',
                     ];
                 })

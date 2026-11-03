@@ -47,9 +47,29 @@
       <!-- ============================================== -->
       <div v-if="activeTab === 'general'" class="space-y-6 max-w-4xl">
         <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs space-y-5">
-          <div class="border-b border-gray-100 pb-3">
-            <h3 class="text-sm font-bold text-gray-900">Identitas Sekolah & Kop Surat Digital</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Informasi ini akan tertera pada seluruh cetakan PDF laporan rekap semester dan surat izin</p>
+          <div class="border-b border-gray-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-gray-900">Identitas Sekolah & Kop Surat Digital</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Informasi parameter sistem dan identitas instansi sekolah</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="resetToEmpty"
+                class="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 text-[11px] font-medium transition cursor-pointer"
+                title="Tampilkan pengaturan dari keadaan kosong"
+              >
+                Mode Kosong
+              </button>
+              <button
+                type="button"
+                @click="fillDefaultSmkn71"
+                class="px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-primary text-[11px] font-bold transition hover:bg-blue-100 cursor-pointer"
+                title="Isi data resmi SMKN 71"
+              >
+                Isi SMKN 71
+              </button>
+            </div>
           </div>
 
           <form @submit.prevent="saveSettings" class="space-y-4 text-xs">
@@ -332,18 +352,46 @@ const errorMsg = ref('')
 const saving = ref(false)
 const downloadingBackup = ref(false)
 
-// Settings state
+// Settings state (Default kosong agar dapat diuji dari state kosong)
 const settings = ref({
-  school_name: 'SMK Negeri 1 Digital',
-  school_npsn: '20104567',
-  school_address: 'Jl. Pendidikan Industri No. 45, Jakarta',
-  headmaster_name: 'Dr. H. Bambang Soeprapto, M.Pd',
-  headmaster_nip: '197505101999031002',
+  school_name: '',
+  school_npsn: '',
+  school_address: '',
+  headmaster_name: '',
+  headmaster_nip: '',
   default_school_hours: '07:30 - 15:30',
-  attendance_lock_pin: '1234',
-  school_logo_url: '/images/logo-smkn71.png',
+  attendance_lock_pin: '',
+  school_logo_url: '',
   enable_demo_login: 'true',
 })
+
+function resetToEmpty() {
+  settings.value = {
+    school_name: '',
+    school_npsn: '',
+    school_address: '',
+    headmaster_name: '',
+    headmaster_nip: '',
+    default_school_hours: '',
+    attendance_lock_pin: '',
+    school_logo_url: '',
+    enable_demo_login: 'false',
+  }
+}
+
+function fillDefaultSmkn71() {
+  settings.value = {
+    school_name: 'SMK Negeri 71 Jakarta',
+    school_npsn: '20104567',
+    school_address: 'Jl. Raden Inten II No. 71, Duren Sawit, Jakarta Timur',
+    headmaster_name: 'Dr. H. Bambang Soeprapto, M.Pd',
+    headmaster_nip: '197505101999031002',
+    default_school_hours: '07:30 - 15:30',
+    attendance_lock_pin: '1234',
+    school_logo_url: '/images/logo-smkn71.png',
+    enable_demo_login: 'true',
+  }
+}
 
 // Audit logs state
 const logs = ref<any[]>([])
