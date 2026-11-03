@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Manajemen Pengguna & Hubungan Akun"
-      subtitle="Kelola kredensial akun pengguna, alokasi peran sistem, dan sinkronisasi akun orang tua dengan murid"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">

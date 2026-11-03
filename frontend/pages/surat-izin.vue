@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       :title="authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Surat Izin Anak' : 'Pengajuan Surat Izin Belajar'"
-      :subtitle="authStore.user?.role === 'ORANG_TUA' ? 'Pantau status pengajuan izin belajar putra/putri Anda' : 'Ajukan permohonan izin/sakit secara mandiri langsung kepada Wali Kelas'"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">

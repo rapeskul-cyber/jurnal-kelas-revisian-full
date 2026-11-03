@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Kontrol Presensi & Override Sesi"
-      subtitle="Buka kunci sesi presensi terkunci untuk koreksi data dan pantau kehadiran harian seluruh kelas"
     />
 
     <main class="px-6 md:px-8 pb-10 space-y-6">

@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       :title="authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Kehadiran Lengkap Anak' : 'Riwayat & Presensi Mandiri Siswa'"
-      :subtitle="authStore.user?.role === 'ORANG_TUA' ? 'Ringkasan dan grafik statistik presensi harian putra/putri Anda di sekolah' : 'Lakukan presensi mandiri harian dan pantau statistik kehadiran pribadi Anda'"
     >
       <template #actions>
         <div class="hidden sm:flex items-center gap-2">

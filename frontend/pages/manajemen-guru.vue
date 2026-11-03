@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Manajemen Guru & Staf Pengajar"
-      subtitle="Kelola akun wali kelas (wali kelas), guru pengajar mata pelajaran, dan penugasan akademik"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">

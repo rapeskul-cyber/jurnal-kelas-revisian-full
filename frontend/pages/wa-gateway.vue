@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="WhatsApp Gateway & Siaran Pengumuman"
-      subtitle="Kelola koneksi bot WhatsApp sekolah, uji coba pengiriman pesan, dan sebarkan siaran pengumuman cepat"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">

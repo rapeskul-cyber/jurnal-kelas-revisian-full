@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Riwayat Surat Izin"
-      subtitle="Arsip dan log digital seluruh surat izin tidak masuk kelas"
     >
       <template #actions>
         <button

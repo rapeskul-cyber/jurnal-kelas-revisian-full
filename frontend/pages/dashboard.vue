@@ -1510,16 +1510,7 @@ const dashboardTitle = computed(() => {
   return 'Dashboard'
 })
 
-const dashboardSubtitle = computed(() => {
-  const role = authStore.user?.role
-  if (role === 'SUPERADMIN') return 'Pengawasan operasional akademik, wali kelas, guru pengajar, dan presensi seluruh kelas'
-  if (role === 'SISWA') return 'Presensi mandiri harian, pengajuan surat izin ke Wali Kelas, dan jurnal kegiatan belajar siswa'
-  if (role === 'ORANG_TUA') return 'Pantau kehadiran harian, surat izin, dan jurnal kegiatan belajar anak di sekolah secara real-time'
-  if (role === 'SEKRETARIS') return 'Ringkasan presensi mandiri kelas dan pencatatan jurnal kegiatan KBM'
-  if (role === 'GURU_PEMBIMBING') return 'Wali Kelas — Verifikasi surat izin siswa, pemantauan jurnal kegiatan, dan rekap presensi kelas'
-  if (role === 'GURU_PENGAJAR') return 'Ringkasan jadwal mengajar, publikasi materi, dan konfirmasi jurnal kegiatan siswa'
-  return ''
-})
+const dashboardSubtitle = computed(() => '')
 
 function getAuthToken(): string | null {
   if (authStore.token) return authStore.token

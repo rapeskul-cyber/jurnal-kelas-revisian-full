@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Jurnal KBM Terpadu"
-      subtitle="Jadwal mengajar, input materi pembelajaran, paraf agenda, dan monitoring rekap kelas"
     />
 
     <main class="px-4 sm:px-6 md:px-8 pb-10 space-y-6">

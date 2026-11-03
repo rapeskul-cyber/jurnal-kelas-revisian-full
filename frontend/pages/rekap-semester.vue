@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Rekapitulasi Presensi Semester"
-      subtitle="Analisis ketertiban presensi siswa per semester"
     >
       <template #actions>
         <button

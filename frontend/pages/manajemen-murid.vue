@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       :title="pageTitle"
-      subtitle="Kelola data siswa, angkat sekretaris kelas (maksimal 2 orang), dan kelola akun orang tua murid"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">

@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Profil Pengguna"
-      subtitle="Kelola informasi akun, nomor WhatsApp OTP, dan keamanan kata sandi"
     />
 
     <main class="px-4 sm:px-8 pb-10 max-w-4xl space-y-5">

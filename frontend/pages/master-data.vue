@@ -2,7 +2,6 @@
   <div class="flex-1 flex flex-col">
     <AppHeader
       title="Master Data Akademik"
-      subtitle="Kelola kelas, mata pelajaran, jadwal mengajar, dan tahun ajaran sekolah"
     />
 
     <main class="px-4 sm:px-8 pb-10 space-y-5">
