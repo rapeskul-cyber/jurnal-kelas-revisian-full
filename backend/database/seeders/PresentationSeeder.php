@@ -32,8 +32,19 @@ class PresentationSeeder extends Seeder
     {
         $defaultPassword = Hash::make('password123');
 
-        // Bersihkan data lama agar bersih total
-        User::whereIn('role', ['ORANG_TUA', 'SISWA', 'SEKRETARIS'])->delete();
+        // Bersihkan data lama agar bersih total hanya menyisakan data presentasi
+        User::whereNotIn('email', [
+            'admin@smkn71.sch.id',
+            'fadilah@smkn71.sch.id',
+            'nurina@smkn71.sch.id',
+            'faradillah@smkn71.sch.id',
+            'siswa1@smkn71.sch.id',
+            'siswa2@smkn71.sch.id',
+            'siswa3@smkn71.sch.id',
+            'rpl2.siswa1@smkn71.sch.id',
+            'rpl2.siswa2@smkn71.sch.id',
+            'rpl2.siswa3@smkn71.sch.id',
+        ])->delete();
 
         // 1. Tahun Ajaran Aktif
         $term = Term::firstOrCreate(
