@@ -331,19 +331,21 @@ class PresentationSeeder extends Seeder
         }
 
         // 11. Sesi Presensi Mandiri Hari Ini (Rabu) untuk Kedua Kelas
-        $today = Carbon::today()->toDateString();
+        $today = Carbon::today()->format('Y-m-d');
 
         // Presensi Hari Ini XI RPL 1
-        $session1 = AttendanceSession::firstOrCreate(
-            ['class_id' => $class1->id, 'date' => $today],
-            [
+        $session1 = AttendanceSession::where('class_id', $class1->id)->whereDate('date', $today)->first();
+        if (!$session1) {
+            $session1 = AttendanceSession::create([
+                'class_id' => $class1->id,
+                'date' => $today,
                 'status' => 'LOCKED',
                 'verification_status' => 'TERVERIFIKASI',
                 'school_hours' => '06:45 - 15:00',
                 'room' => 'R.402',
                 'locked_at' => Carbon::now(),
-            ]
-        );
+            ]);
+        }
 
         foreach ($studentsRpl1 as $i => $s) {
             $status = 'HADIR';
@@ -366,16 +368,18 @@ class PresentationSeeder extends Seeder
         }
 
         // Presensi Hari Ini XI RPL 2
-        $session2 = AttendanceSession::firstOrCreate(
-            ['class_id' => $class2->id, 'date' => $today],
-            [
+        $session2 = AttendanceSession::where('class_id', $class2->id)->whereDate('date', $today)->first();
+        if (!$session2) {
+            $session2 = AttendanceSession::create([
+                'class_id' => $class2->id,
+                'date' => $today,
                 'status' => 'LOCKED',
                 'verification_status' => 'TERVERIFIKASI',
                 'school_hours' => '06:45 - 15:00',
                 'room' => 'R.406',
                 'locked_at' => Carbon::now(),
-            ]
-        );
+            ]);
+        }
 
         foreach ($studentsRpl2 as $i => $s) {
             $status = 'HADIR';
