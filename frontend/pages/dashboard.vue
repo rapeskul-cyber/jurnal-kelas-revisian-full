@@ -1635,7 +1635,13 @@ if (process.client) {
 const filteredClassesMonitoring = computed(() => {
   if (!data.value?.classes_monitoring) return []
   if (selectedMajorFilter.value === 'ALL') return data.value.classes_monitoring
-  return data.value.classes_monitoring.filter((c: any) => c.major === selectedMajorFilter.value)
+  return data.value.classes_monitoring.filter((c: any) => {
+    let m = c.major
+    if (m && (m.toLowerCase().includes('rekayasa') || m.toLowerCase().includes('perangkat'))) {
+      m = 'RPL'
+    }
+    return m === selectedMajorFilter.value
+  })
 })
 
 const dashboardTitle = computed(() => {

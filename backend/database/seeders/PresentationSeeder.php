@@ -69,12 +69,12 @@ class PresentationSeeder extends Seeder
         // 3. Dua Kelas Utama: XI RPL 1 dan XI RPL 2 (Sekre belum ditentukan)
         $class1 = SchoolClass::updateOrCreate(
             ['name' => 'XI RPL 1'],
-            ['major' => 'Rekayasa Perangkat Lunak', 'secretary_id' => null]
+            ['major' => 'RPL', 'secretary_id' => null]
         );
 
         $class2 = SchoolClass::updateOrCreate(
             ['name' => 'XI RPL 2'],
-            ['major' => 'Rekayasa Perangkat Lunak', 'secretary_id' => null]
+            ['major' => 'RPL', 'secretary_id' => null]
         );
 
         // 4. Superadmin (1 Akun)

@@ -913,14 +913,24 @@ const candidateSecretaries = ref<any[]>([])
 const uniqueMajors = computed(() => {
   const set = new Set<string>()
   classes.value.forEach((c: any) => {
-    if (c.major) set.add(c.major)
+    let m = c.major
+    if (m && (m.toLowerCase().includes('rekayasa') || m.toLowerCase().includes('perangkat'))) {
+      m = 'RPL'
+    }
+    if (m) set.add(m)
   })
   return set.size ? Array.from(set) : ['RPL', 'DKV', 'Animasi']
 })
 
 const filteredClasses = computed(() => {
   if (classMajorFilter.value === 'ALL') return classes.value
-  return classes.value.filter(c => c.major === classMajorFilter.value)
+  return classes.value.filter(c => {
+    let m = c.major
+    if (m && (m.toLowerCase().includes('rekayasa') || m.toLowerCase().includes('perangkat'))) {
+      m = 'RPL'
+    }
+    return m === classMajorFilter.value
+  })
 })
 
 const filteredSubjects = computed(() => {
