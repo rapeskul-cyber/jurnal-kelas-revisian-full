@@ -131,7 +131,7 @@
               <input
                 v-model="form.phone"
                 type="text"
-                placeholder="Contoh: 08123456789 atau 628123456789"
+                placeholder=""
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary transition outline-none"
               />
               <p class="text-[11px] text-gray-400 mt-1">Pastikan nomor aktif dan terdaftar di WhatsApp.</p>
@@ -296,7 +296,7 @@
                 v-model="smsOtpInput"
                 type="text"
                 maxlength="6"
-                placeholder="123456" inputmode="numeric" pattern="[0-9]*"
+                placeholder="" inputmode="numeric" pattern="[0-9]*"
                 class="w-full text-center text-lg font-mono font-bold tracking-widest px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
               />
             </div>
@@ -402,7 +402,7 @@
             <input
               v-model="waPhoneInput"
               type="text"
-              placeholder="Contoh: 088298674462"
+              placeholder=""
               class="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
             />
             <button

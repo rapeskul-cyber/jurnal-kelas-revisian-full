@@ -546,7 +546,7 @@
               v-model="parentForm.name"
               type="text"
               required
-              placeholder="Contoh: Bapak/Ibu Ahmad Fadillah"
+              placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
@@ -557,7 +557,7 @@
               v-model="parentForm.phone"
               type="text"
               required
-              placeholder="Contoh: 089621371972"
+              placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
             <p class="text-[10px] text-gray-400 mt-1">Digunakan untuk menerima notifikasi presensi mandiri, surat izin, dan OTP WhatsApp.</p>
@@ -568,7 +568,7 @@
             <input
               v-model="parentForm.email"
               type="email"
-              placeholder="ortu.nama@sekolah.sch.id"
+              placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
@@ -669,7 +669,7 @@
               v-model="form.name"
               type="text"
               required
-              placeholder="Contoh: Ahmad Fadillah"
+              placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
@@ -684,7 +684,7 @@
                 inputmode="numeric"
                 @input="form.nip_nis = form.nip_nis.replace(/\D/g, '')"
                 required
-                placeholder="Contoh: 102402"
+                placeholder=""
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
@@ -693,7 +693,7 @@
               <input
                 v-model="form.phone"
                 type="text"
-                placeholder="081234567890"
+                placeholder=""
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
@@ -706,7 +706,7 @@
               v-model="form.email"
               type="email"
               required
-              placeholder="nama.siswa@gmail.com"
+              placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>

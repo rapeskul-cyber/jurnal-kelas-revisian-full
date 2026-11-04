@@ -131,14 +131,18 @@
                 class="p-4 rounded-2xl border border-gray-200 bg-white shadow-2xs space-y-3"
               >
                 <div class="flex items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center shrink-0">
-                        {{ idx + 1 }}
-                      </span>
-                      <p class="font-bold text-gray-900 text-sm truncate">{{ u.name }}</p>
+                  <div class="min-w-0 flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center shrink-0">
+                      {{ idx + 1 }}
+                    </span>
+                    <div class="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center shadow-2xs">
+                      <img v-if="u.avatar_url || u.avatar" :src="u.avatar_url || u.avatar" :alt="u.name" class="w-full h-full object-cover" />
+                      <span v-else class="text-xs font-bold text-gray-600 uppercase">{{ u.name?.charAt(0) || 'U' }}</span>
                     </div>
-                    <p class="text-[11px] text-gray-400 font-mono mt-0.5 ml-8 truncate">{{ u.email }}</p>
+                    <div class="min-w-0">
+                      <p class="font-bold text-gray-900 text-sm truncate">{{ u.name }}</p>
+                      <p class="text-[11px] text-gray-400 font-mono truncate">{{ u.email }}</p>
+                    </div>
                   </div>
                   <span
                     class="px-2.5 py-0.5 rounded-md text-[10px] font-bold shrink-0"
@@ -248,10 +252,16 @@
                     {{ idx + 1 }}
                   </td>
                   <td class="py-3.5 px-4">
-                    <p class="font-bold text-gray-900">{{ u.name }}</p>
-                    <p class="text-[10px] text-gray-400 font-mono">{{ u.email }}</p>
-                    <!-- Child connection badge for ORANG_TUA -->
-                    <div v-if="u.role === 'ORANG_TUA'" class="mt-1">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center shadow-2xs">
+                        <img v-if="u.avatar_url || u.avatar" :src="u.avatar_url || u.avatar" :alt="u.name" class="w-full h-full object-cover" />
+                        <span v-else class="text-xs font-bold text-gray-600 uppercase">{{ u.name?.charAt(0) || 'U' }}</span>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="font-bold text-gray-900">{{ u.name }}</p>
+                        <p class="text-[10px] text-gray-400 font-mono">{{ u.email }}</p>
+                        <!-- Child connection badge for ORANG_TUA -->
+                        <div v-if="u.role === 'ORANG_TUA'" class="mt-1">
                       <span
                         v-if="u.student"
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -272,7 +282,9 @@
                         Belum terhubung ke anak
                       </span>
                     </div>
-                  </td>
+                  </div>
+                </div>
+              </td>
                   <td class="py-3.5 px-4 font-mono text-gray-600">
                     {{ u.nip_nis || '-' }}
                   </td>
@@ -374,6 +386,37 @@
             </div>
 
             <form @submit.prevent="submitCreateUser" class="space-y-3.5 text-xs">
+              <!-- Foto Profil / Avatar Siswa & Guru (Opsional) -->
+              <div class="flex items-center gap-3.5 p-3 bg-gray-50/70 rounded-2xl border border-gray-150">
+                <div class="relative w-14 h-14 rounded-full overflow-hidden bg-white border-2 border-dashed border-gray-300 flex items-center justify-center shrink-0 shadow-2xs">
+                  <img v-if="newUserAvatarPreview" :src="newUserAvatarPreview" class="w-full h-full object-cover" />
+                  <Camera v-else class="w-6 h-6 text-gray-400" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-bold text-gray-800 mb-1">Foto Profil / PP (Opsional)</label>
+                  <div class="flex items-center gap-2">
+                    <label class="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold cursor-pointer transition shadow-2xs">
+                      <span>{{ newUserAvatarPreview ? 'Ganti Foto' : 'Pilih Foto Profil' }}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        @change="handleNewUserAvatarChange"
+                        class="hidden"
+                      />
+                    </label>
+                    <button
+                      v-if="newUserAvatarPreview"
+                      type="button"
+                      @click="clearNewUserAvatar"
+                      class="text-xs text-rose-600 hover:underline font-medium cursor-pointer"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-1">Format foto JPG, PNG, atau WEBP maks 5MB.</p>
+                </div>
+              </div>
+
               <!-- Nama Lengkap -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -382,7 +425,7 @@
                 <input
                   v-model="newUser.name"
                   type="text"
-                  placeholder="Contoh: Amanda Wijaya, S.Pd"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   required
                 />
@@ -475,7 +518,7 @@
                   type="text"
                   :inputmode="(newUser.role === 'SISWA' || newUser.role === 'SEKRETARIS') ? 'numeric' : 'text'"
                   @input="handleNisInput(newUser)"
-                  :placeholder="(newUser.role === 'SISWA' || newUser.role === 'SEKRETARIS') ? 'Contoh: 102402 (Hanya angka)' : 'Masukkan nomor identifikasi resmi'"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -502,7 +545,7 @@
                 <input
                   v-model="newUser.email"
                   type="email"
-                  placeholder="Contoh: AmandaWijaya@gmail.com"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   required
                 />
@@ -516,7 +559,7 @@
                 <input
                   v-model="newUser.phone"
                   type="tel"
-                  placeholder="Contoh: 085693233414"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -565,6 +608,37 @@
             </div>
 
             <form @submit.prevent="submitUpdateUser" class="space-y-3.5 text-xs">
+              <!-- Edit Foto Profil / Avatar -->
+              <div class="flex items-center gap-3.5 p-3 bg-gray-50/70 rounded-2xl border border-gray-150">
+                <div class="relative w-14 h-14 rounded-full overflow-hidden bg-white border-2 border-dashed border-gray-300 flex items-center justify-center shrink-0 shadow-2xs">
+                  <img v-if="editUserAvatarPreview || editUser.avatar_url || editUser.avatar" :src="editUserAvatarPreview || editUser.avatar_url || editUser.avatar" class="w-full h-full object-cover" />
+                  <Camera v-else class="w-6 h-6 text-gray-400" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-bold text-gray-800 mb-1">Foto Profil / PP</label>
+                  <div class="flex items-center gap-2">
+                    <label class="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold cursor-pointer transition shadow-2xs">
+                      <span>{{ (editUserAvatarPreview || editUser.avatar_url || editUser.avatar) ? 'Ganti Foto' : 'Pilih Foto Profil' }}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        @change="handleEditUserAvatarChange"
+                        class="hidden"
+                      />
+                    </label>
+                    <button
+                      v-if="editUserAvatarPreview || editUser.avatar_url || editUser.avatar"
+                      type="button"
+                      @click="clearEditUserAvatar"
+                      class="text-xs text-rose-600 hover:underline font-medium cursor-pointer"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-1">Perbarui foto profil pengguna ini.</p>
+                </div>
+              </div>
+
               <!-- Nama Lengkap -->
               <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -629,7 +703,7 @@
                   type="text"
                   :inputmode="(editUser.role === 'SISWA' || editUser.role === 'SEKRETARIS') ? 'numeric' : 'text'"
                   @input="handleNisInput(editUser)"
-                  :placeholder="(editUser.role === 'SISWA' || editUser.role === 'SEKRETARIS') ? 'Contoh: 102402 (Hanya angka)' : 'Masukkan nomor identifikasi resmi'"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -669,7 +743,7 @@
                 <input
                   v-model="editUser.phone"
                   type="tel"
-                  placeholder="Contoh: 085693233414"
+                  placeholder=""
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -835,6 +909,7 @@ import {
   Pencil,
   Trash2,
   GraduationCap,
+  Camera,
   ExternalLink,
 } from 'lucide-vue-next'
 
@@ -884,6 +959,65 @@ const editUser = ref({
   email: '',
   phone: ''
 })
+
+const newUserAvatarPreview = ref('')
+const newUserAvatarBase64 = ref('')
+
+const handleNewUserAvatarChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ukuran foto profil maksimal 5MB!')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const res = (e.target?.result as string) || ''
+      newUserAvatarPreview.value = res
+      newUserAvatarBase64.value = res
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const clearNewUserAvatar = () => {
+  newUserAvatarPreview.value = ''
+  newUserAvatarBase64.value = ''
+}
+
+const editUserAvatarPreview = ref('')
+const editUserAvatarBase64 = ref('')
+const editUserRemoveAvatar = ref(false)
+
+const handleEditUserAvatarChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ukuran foto profil maksimal 5MB!')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const res = (e.target?.result as string) || ''
+      editUserAvatarPreview.value = res
+      editUserAvatarBase64.value = res
+      editUserRemoveAvatar.value = false
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const clearEditUserAvatar = () => {
+  editUserAvatarPreview.value = ''
+  editUserAvatarBase64.value = ''
+  editUserRemoveAvatar.value = true
+  if (editUser.value) {
+    (editUser.value as any).avatar = null
+    (editUser.value as any).avatar_url = null
+  }
+}
 
 const formatRoleLabel = (role: string) => {
   switch (role) {
@@ -969,6 +1103,9 @@ function onStudentSelectForEditUser() {
 }
 
 function openEditModal(u: any) {
+  editUserAvatarPreview.value = ''
+  editUserAvatarBase64.value = ''
+  editUserRemoveAvatar.value = false
   editUser.value = {
     id: u.id,
     name: u.name,
@@ -977,8 +1114,10 @@ function openEditModal(u: any) {
     class_id: u.class_id ? String(u.class_id) : '',
     student_id: u.student_id ? String(u.student_id) : (u.student?.id ? String(u.student.id) : ''),
     email: u.email,
-    phone: u.phone || ''
-  }
+    phone: u.phone || '',
+    avatar: u.avatar || null,
+    avatar_url: u.avatar_url || null,
+  } as any
   showEditDrawer.value = true
 }
 
@@ -1037,12 +1176,15 @@ const submitCreateUser = async () => {
         advisor_class_id: (newUser.value.role === 'GURU_PENGAJAR' && newUser.value.is_also_walas && newUser.value.advisor_class_id)
           ? Number(newUser.value.advisor_class_id)
           : null,
+        avatar_base64: newUserAvatarBase64.value || null,
       }
     })
 
     toast.success(res?.message || `Pengguna baru "${newUser.value.name}" berhasil didaftarkan!`)
     successMsg.value = `Pengguna baru "${newUser.value.name}" berhasil didaftarkan!`
     showAddDrawer.value = false
+    newUserAvatarPreview.value = ''
+    newUserAvatarBase64.value = ''
     newUser.value = {
       name: '',
       role: 'ORANG_TUA',
@@ -1077,12 +1219,17 @@ const submitUpdateUser = async () => {
         nip_nis: editUser.value.nip_nis,
         class_id: editUser.value.class_id ? Number(editUser.value.class_id) : null,
         student_id: (editUser.value.role === 'ORANG_TUA' && editUser.value.student_id) ? Number(editUser.value.student_id) : null,
+        avatar_base64: editUserAvatarBase64.value || null,
+        remove_avatar: editUserRemoveAvatar.value || false,
       }
     })
 
     toast.success(res?.message || 'Data pengguna berhasil diperbarui.')
     successMsg.value = `Data pengguna "${editUser.value.name}" berhasil diperbarui!`
     showEditDrawer.value = false
+    editUserAvatarPreview.value = ''
+    editUserAvatarBase64.value = ''
+    editUserRemoveAvatar.value = false
     if (editUser.value.id === authStore.user?.id) {
       await authStore.fetchUser()
     }

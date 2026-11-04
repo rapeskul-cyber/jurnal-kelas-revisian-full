@@ -25,7 +25,7 @@
             type="email"
             required
             id="login-email"
-            placeholder="nama@sekolah.sch.id"
+            placeholder=""
             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
         </div>

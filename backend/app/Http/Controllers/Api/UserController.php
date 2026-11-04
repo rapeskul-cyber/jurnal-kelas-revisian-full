@@ -111,6 +111,8 @@ class UserController extends Controller
                 'is_active' => true,
             ]);
 
+            $this->handleAvatarUpload($request, $user);
+
             if ($request->role === 'SEKRETARIS') {
                 SchoolClass::where('id', $classId)->update(['secretary_id' => $user->id]);
             }
@@ -203,6 +205,8 @@ class UserController extends Controller
             'password' => Hash::make($defaultPassword),
             'is_active' => true,
         ]);
+
+        $this->handleAvatarUpload($request, $user);
 
         $advisorClassId = $request->input('advisor_class_id') ?: ($request->role === 'GURU_PEMBIMBING' ? $request->class_id : null);
         if ($advisorClassId && in_array($user->role, ['GURU_PEMBIMBING', 'GURU_PENGAJAR'])) {
@@ -375,6 +379,7 @@ class UserController extends Controller
             }
 
             $user->update($request->only(['name', 'email', 'phone', 'nip_nis', 'role']));
+            $this->handleAvatarUpload($request, $user);
 
             // Update penanggung jawab sekretaris di data tabel kelas
             if ($request->has('role')) {
@@ -504,6 +509,7 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
+        $this->handleAvatarUpload($request, $user);
 
         if ($user->role === 'GURU_PEMBIMBING' && $request->filled('class_id')) {
             SchoolClass::where('id', $request->class_id)->update(['advisor_id' => $user->id]);
@@ -797,5 +803,50 @@ class UserController extends Controller
             'skipped_count' => $skipped,
             'errors' => $errors,
         ]);
+    }
+
+    private function handleAvatarUpload(Request $request, User $user)
+    {
+        $dir = storage_path('app/public/avatars');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $ext = $file->getClientOriginalExtension() ?: 'jpg';
+            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $ext;
+            $file->move($dir, $filename);
+            $avatarUrl = '/api/avatars/' . $filename;
+            $user->avatar = $avatarUrl;
+            $user->avatar_url = $avatarUrl;
+            $user->save();
+        } elseif ($request->filled('avatar_base64')) {
+            $base64Data = $request->input('avatar_base64');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+                $type = strtolower($type[1]);
+                $data = base64_decode($base64Data);
+                if ($data !== false) {
+                    $ext = ($type === 'jpeg') ? 'jpg' : $type;
+                    $filename = 'avatar_' . $user->id . '_' . time() . '.' . $ext;
+                    file_put_contents($dir . '/' . $filename, $data);
+                    $avatarUrl = '/api/avatars/' . $filename;
+                    $user->avatar = $avatarUrl;
+                    $user->avatar_url = $avatarUrl;
+                    $user->save();
+                }
+            }
+        } elseif ($request->boolean('remove_avatar')) {
+            if ($user->avatar) {
+                $oldFile = $dir . '/' . basename($user->avatar);
+                if (file_exists($oldFile)) {
+                    @unlink($oldFile);
+                }
+            }
+            $user->avatar = null;
+            $user->avatar_url = null;
+            $user->save();
+        }
     }
 }

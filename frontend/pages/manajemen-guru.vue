@@ -135,24 +135,14 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Impor Guru Massal Button -->
+          <!-- Refresh Button -->
           <button
             type="button"
-            @click="openImportModal"
-            class="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs cursor-pointer bg-white"
+            @click="fetchTeachers"
+            class="px-3.5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs cursor-pointer bg-white"
           >
-            <UploadCloud class="w-4 h-4 text-primary" />
-            <span>Impor Guru (JSON)</span>
-          </button>
-
-          <!-- Tambah Guru Button -->
-          <button
-            type="button"
-            @click="openAddModal"
-            class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
-          >
-            <Plus class="w-4 h-4" />
-            <span>+ Tambah Guru Baru</span>
+            <RefreshCw class="w-4 h-4 text-primary" :class="{ 'animate-spin': loading }" />
+            <span>Segarkan Data</span>
           </button>
         </div>
       </div>
@@ -175,14 +165,20 @@
             :key="t.id"
             class="bg-white rounded-2xl border border-gray-150 p-4 shadow-2xs space-y-3"
           >
-            <!-- Header: Nama, No, Status -->
+            <!-- Header: Avatar, Nama, No, Status -->
             <div class="flex items-start justify-between gap-2">
-              <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold text-gray-400">#{{ idx + 1 }}</span>
-                  <span class="font-bold text-gray-900 text-sm">{{ t.name }}</span>
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center shadow-2xs">
+                  <img v-if="t.avatar_url || t.avatar" :src="t.avatar_url || t.avatar" :alt="t.name" class="w-full h-full object-cover" />
+                  <span v-else class="text-xs font-bold text-gray-600 uppercase">{{ t.name?.charAt(0) || 'G' }}</span>
                 </div>
-                <div class="text-[11px] text-gray-500 font-mono">NIP: {{ t.nip_nis || '-' }}</div>
+                <div class="space-y-0.5 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-gray-400">#{{ idx + 1 }}</span>
+                    <span class="font-bold text-gray-900 text-sm truncate">{{ t.name }}</span>
+                  </div>
+                  <div class="text-[11px] text-gray-500 font-mono">NIP: {{ t.nip_nis || '-' }}</div>
+                </div>
               </div>
 
               <!-- Status Toggle Pill -->
@@ -238,47 +234,24 @@
               </div>
             </div>
 
-            <!-- Action Buttons: Impersonate + CRUD (44px min touch target) -->
+            <!-- Action Buttons: Review Data + Impersonate (44px min touch target) -->
             <div class="flex items-center gap-2 pt-1 border-t border-gray-100">
               <button
                 type="button"
+                @click="openReviewModal(t)"
+                class="flex-1 min-h-[44px] px-3 py-2 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                <Eye class="w-4 h-4" />
+                <span>Review Data</span>
+              </button>
+
+              <button
+                type="button"
                 @click="handleImpersonate(t)"
-                class="flex-1 min-h-[44px] px-3 py-2 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer shadow-2xs"
+                class="min-h-[44px] px-4 py-2 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer shadow-2xs"
               >
                 Login As
               </button>
-
-              <div class="flex items-center gap-1">
-                <!-- Edit -->
-                <button
-                  type="button"
-                  @click="openEditModal(t)"
-                  class="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-xl text-gray-600 transition cursor-pointer"
-                  title="Edit Data Guru"
-                >
-                  <Edit3 class="w-4 h-4" />
-                </button>
-
-                <!-- Reset Password -->
-                <button
-                  type="button"
-                  @click="handleResetPassword(t)"
-                  class="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-amber-50 rounded-xl text-amber-600 transition cursor-pointer"
-                  title="Reset Kata Sandi"
-                >
-                  <KeyRound class="w-4 h-4" />
-                </button>
-
-                <!-- Delete -->
-                <button
-                  type="button"
-                  @click="handleDelete(t)"
-                  class="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-rose-50 rounded-xl text-rose-600 transition cursor-pointer"
-                  title="Hapus Akun Guru"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -300,8 +273,16 @@
               <tr v-for="(t, idx) in teachers" :key="t.id" class="hover:bg-gray-50/60 transition">
                 <td class="py-3.5 px-4 text-center text-gray-400 font-medium whitespace-nowrap">{{ idx + 1 }}</td>
                 <td class="py-3.5 px-4 whitespace-nowrap">
-                  <div class="font-bold text-gray-900 text-sm">{{ t.name }}</div>
-                  <div class="text-[11px] text-gray-500 font-mono mt-0.5">NIP: {{ t.nip_nis || '-' }}</div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center shadow-2xs">
+                      <img v-if="t.avatar_url || t.avatar" :src="t.avatar_url || t.avatar" :alt="t.name" class="w-full h-full object-cover" />
+                      <span v-else class="text-xs font-bold text-gray-600 uppercase">{{ t.name?.charAt(0) || 'G' }}</span>
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900 text-sm">{{ t.name }}</div>
+                      <div class="text-[11px] text-gray-500 font-mono mt-0.5">NIP: {{ t.nip_nis || '-' }}</div>
+                    </div>
+                  </div>
                 </td>
                 <td class="py-3.5 px-4 whitespace-nowrap">
                   <div class="text-gray-800">{{ t.email }}</div>
@@ -347,44 +328,26 @@
                   </button>
                 </td>
                 <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                  <div class="inline-flex items-center gap-1.5">
+                  <div class="inline-flex items-center gap-2">
+                    <!-- Review Data -->
+                    <button
+                      type="button"
+                      @click="openReviewModal(t)"
+                      class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      title="Review Lengkap Data Guru"
+                    >
+                      <Eye class="w-3.5 h-3.5" />
+                      <span>Review Data</span>
+                    </button>
+
                     <!-- Impersonate (Login As) -->
                     <button
                       type="button"
                       @click="handleImpersonate(t)"
-                      class="px-2.5 py-1 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap"
+                      class="px-2.5 py-1.5 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 rounded-lg text-xs font-semibold transition cursor-pointer"
                       title="Masuk sebagai akun guru ini (Impersonasi)"
                     >
                       Login As
-                    </button>
-                    <!-- Edit -->
-                    <button
-                      type="button"
-                      @click="openEditModal(t)"
-                      class="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-800 transition cursor-pointer"
-                      title="Edit Data Guru"
-                    >
-                      <Edit3 class="w-4 h-4" />
-                    </button>
-
-                    <!-- Reset Password -->
-                    <button
-                      type="button"
-                      @click="handleResetPassword(t)"
-                      class="p-1.5 hover:bg-amber-50 rounded-lg text-amber-600 transition cursor-pointer"
-                      title="Reset Kata Sandi ke password123"
-                    >
-                      <KeyRound class="w-4 h-4" />
-                    </button>
-
-                    <!-- Delete -->
-                    <button
-                      type="button"
-                      @click="handleDelete(t)"
-                      class="p-1.5 hover:bg-rose-50 rounded-lg text-rose-600 transition cursor-pointer"
-                      title="Hapus Akun Guru"
-                    >
-                      <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
                 </td>
@@ -396,311 +359,115 @@
       </div>
     </main>
 
-    <!-- MODAL TAMBAH / EDIT GURU -->
+    <!-- MODAL REVIEW DATA GURU & STAF -->
     <div
-      v-if="showModal"
+      v-if="showReviewModal && selectedTeacher"
       class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
     >
-      <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-xl overflow-hidden border border-gray-150 animate-in fade-in duration-150 max-h-[90vh] flex flex-col pb-safe">
+      <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-gray-150 animate-in fade-in duration-150 max-h-[90vh] flex flex-col pb-safe">
         <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-2 sm:hidden shrink-0"></div>
         <div class="p-5 border-b border-gray-150 flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-gray-900">
-              {{ isEditing ? 'Edit Data Akun Guru' : 'Tambah Akun Guru Baru' }}
-            </h3>
-            <p class="text-xs text-gray-400 mt-0.5">Kelola tipe guru, NIP, penugasan kelas atau mapel</p>
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center font-bold">
+              <Eye class="w-4 h-4" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-gray-900">Review Data Guru & Staf</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Informasi profil lengkap dan status penugasan</p>
+            </div>
           </div>
-          <button @click="closeModal" class="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer">
+          <button @click="closeReviewModal" class="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer">
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="p-5 space-y-4 text-xs">
-          <!-- Tipe Guru / Peran -->
-          <div>
-            <label class="block font-bold text-gray-700 mb-1.5">Tipe Guru / Peran Akun *</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                @click="form.role = 'GURU_PEMBIMBING'"
-                class="p-3 rounded-xl border text-left transition cursor-pointer"
-                :class="form.role === 'GURU_PEMBIMBING' ? 'border-primary ring-2 ring-primary/20 bg-white text-primary font-bold shadow-2xs' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-              >
-                <div class="font-bold">Wali Kelas</div>
-                <div class="text-[10px] text-gray-500 mt-0.5">Wali kelas & kelas binaan</div>
-              </button>
-
-              <button
-                type="button"
-                @click="form.role = 'GURU_PENGAJAR'"
-                class="p-3 rounded-xl border text-left transition cursor-pointer"
-                :class="form.role === 'GURU_PENGAJAR' ? 'border-primary ring-2 ring-primary/20 bg-white text-primary font-bold shadow-2xs' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-              >
-                <div class="font-bold">Guru Pengajar</div>
-                <div class="text-[10px] text-gray-500 mt-0.5">Guru mapel KBM</div>
-              </button>
-
-              <button
-                type="button"
-                @click="form.role = 'SUPERADMIN'"
-                class="p-3 rounded-xl border text-left transition cursor-pointer"
-                :class="form.role === 'SUPERADMIN' ? 'border-primary ring-2 ring-primary/20 bg-white text-primary font-bold shadow-2xs' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-              >
-                <div class="font-bold">Super Admin</div>
-                <div class="text-[10px] text-gray-500 mt-0.5">Admin sistem</div>
-              </button>
-            </div>
-          </div>
-
-          <!-- Informasi Khusus Superadmin -->
-          <div v-if="form.role === 'SUPERADMIN'" class="p-3 bg-white text-gray-800 rounded-xl border border-gray-200 shadow-2xs">
-            <p class="font-bold">Akses Super Administrator</p>
-            <p class="text-[11px] mt-0.5 text-purple-700">Akun ini memiliki hak akses penuh untuk mengelola master data, pengaturan sistem, WA Gateway, dan seluruh pengguna.</p>
-          </div>
-
-          <!-- Nama Guru -->
-          <div>
-            <label class="block font-bold text-gray-700 mb-1">Nama Lengkap (Gelar) *</label>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              placeholder="Contoh: Budi Santoso, S.Pd"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-
-          <!-- NIP & No WA -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-gray-700 mb-1">NIP / NUPTK</label>
-              <input
-                v-model="form.nip_nis"
-                type="text"
-                placeholder="19840212001"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        <div class="p-5 space-y-4 overflow-y-auto text-xs">
+          <!-- Profile Card -->
+          <div class="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/60 to-indigo-50/40 border border-blue-100/70">
+            <div class="w-16 h-16 rounded-full overflow-hidden bg-white border-2 border-primary/20 shadow-sm shrink-0 flex items-center justify-center">
+              <img
+                v-if="selectedTeacher.avatar_url || selectedTeacher.avatar"
+                :src="selectedTeacher.avatar_url || selectedTeacher.avatar"
+                :alt="selectedTeacher.name"
+                class="w-full h-full object-cover"
               />
+              <span v-else class="text-xl font-bold text-primary uppercase">
+                {{ selectedTeacher.name?.charAt(0) || 'G' }}
+              </span>
             </div>
-            <div>
-              <label class="block font-bold text-gray-700 mb-1">No. WhatsApp</label>
-              <input
-                v-model="form.phone"
-                type="text"
-                placeholder="628123456780"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-          </div>
-
-          <!-- Email -->
-          <div>
-            <label class="block font-bold text-gray-700 mb-1">Alamat Email *</label>
-            <input
-              v-model="form.email"
-              type="email"
-              required
-              placeholder="nama.guru@sekolah.sch.id"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-
-          <!-- Penugasan Khusus: Wali Kelas (Pilih Kelas Binaan) -->
-          <div v-if="form.role === 'GURU_PEMBIMBING'">
-            <label class="block font-bold text-gray-700 mb-1">Kelas Binaan (Wali Kelas) *</label>
-            <select
-              v-model="form.class_id"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
-            >
-              <option :value="null">-- Pilih Kelas --</option>
-              <option v-for="cls in classes" :key="cls.id" :value="cls.id">
-                {{ cls.name }} (Jurusan {{ cls.major }})
-              </option>
-            </select>
-          </div>
-
-          <!-- Penugasan Khusus: Guru Pengajar (Spesialisasi Mapel) -->
-          <div v-if="form.role === 'GURU_PENGAJAR'" class="space-y-3">
-            <div>
-              <label class="block font-bold text-gray-700 mb-1">Mata Pelajaran yang Diampu</label>
-              <select
-                v-model="form.subject_id"
-                @change="onSubjectSelect"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
-              >
-                <option :value="null">-- Pilih Mata Pelajaran --</option>
-                <option v-for="s in subjects" :key="s.id" :value="s.id">
-                  {{ s.name }} ({{ s.code }}) - {{ s.major || 'UMUM' }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block font-bold text-gray-700 mb-1">Spesialisasi / Deskripsi Keahlian Guru</label>
-              <input
-                v-model="form.specialization"
-                type="text"
-                placeholder="Contoh: Pemrograman Web & Basis Data"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
+            <div class="min-w-0 flex-1">
+              <h4 class="font-bold text-gray-900 text-sm sm:text-base leading-tight">{{ selectedTeacher.name }}</h4>
+              <p class="text-[11px] text-gray-500 font-mono mt-0.5">NIP: {{ selectedTeacher.nip_nis || '-' }}</p>
+              <div class="flex items-center gap-2 mt-2 flex-wrap">
+                <span
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                  :class="selectedTeacher.role === 'GURU_PEMBIMBING' ? 'bg-blue-100 text-primary' : (selectedTeacher.role === 'GURU_PENGAJAR' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700')"
+                >
+                  {{ selectedTeacher.role === 'GURU_PEMBIMBING' ? 'Wali Kelas' : (selectedTeacher.role === 'GURU_PENGAJAR' ? 'Guru Pengajar' : 'Super Administrator') }}
+                </span>
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="selectedTeacher.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-700'"
+                >
+                  {{ selectedTeacher.is_active ? '● Akun Aktif' : '○ Akun Nonaktif' }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="pt-3 border-t border-gray-150 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              :disabled="saving"
-              class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              <span>{{ saving ? 'Menyimpan...' : (isEditing ? 'Perbarui Guru' : 'Simpan Guru Baru') }}</span>
-            </button>
+          <!-- Info Details Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 bg-gray-50/70 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] uppercase font-bold block mb-1">Email Resmi</span>
+              <span class="text-gray-800 font-medium break-all">{{ selectedTeacher.email }}</span>
+            </div>
+            <div class="p-3 bg-gray-50/70 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] uppercase font-bold block mb-1">Nomor WhatsApp / HP</span>
+              <span class="text-gray-800 font-medium">{{ selectedTeacher.phone ? selectedTeacher.phone : '-' }}</span>
+            </div>
+            <div class="p-3 bg-gray-50/70 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] uppercase font-bold block mb-1">Penugasan Kelas (Walas)</span>
+              <span class="text-gray-800 font-bold">
+                {{ selectedTeacher.guided_class?.name || selectedTeacher.school_class?.name || '-' }}
+              </span>
+            </div>
+            <div class="p-3 bg-gray-50/70 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] uppercase font-bold block mb-1">Mata Pelajaran (Mapel)</span>
+              <span class="text-gray-800 font-bold">
+                {{ selectedTeacher.specialization || (selectedTeacher.taught_subjects?.map((s: any) => s.name).join(', ')) || '-' }}
+              </span>
+            </div>
           </div>
-        </form>
-      </div>
-    </div>
 
-    <!-- Modal Impor Guru & Staf Massal (JSON) -->
-    <div
-      v-if="showImportModal"
-      class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
-    >
-      <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto pb-safe">
-        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-2 sm:hidden shrink-0"></div>
-        <div class="flex items-center justify-between border-b border-gray-150 pb-3">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center font-bold">
-              <UploadCloud class="w-5 h-5" />
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-gray-900">Impor Guru & Staf Pengajar Massal</h3>
-              <p class="text-[11px] text-gray-500">Impor akun wali kelas dan pengajar mata pelajaran sekaligus</p>
-            </div>
+          <!-- Catatan / Role description -->
+          <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-gray-600 leading-relaxed text-[11px]">
+            <p v-if="selectedTeacher.role === 'GURU_PEMBIMBING'">
+              📌 <strong>Wali Kelas:</strong> Bertanggung jawab memonitor kehadiran harian murid, memvalidasi surat izin ketidakhadiran, serta mengelola data siswa binaan.
+            </p>
+            <p v-else-if="selectedTeacher.role === 'GURU_PENGAJAR'">
+              📌 <strong>Guru Pengajar:</strong> Bertanggung jawab mengisi agenda jurnal materi pelajaran, memverifikasi presensi kehadiran jam mengajar, dan mencatat evaluasi kelas.
+            </p>
+            <p v-else>
+              📌 <strong>Super Administrator:</strong> Akses penuh tata kelola master data sistem, akun pengguna, dan konfigurasi platform.
+            </p>
           </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-150 bg-gray-50/50 flex items-center justify-between gap-2">
           <button
             type="button"
-            @click="closeImportModal"
-            class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+            @click="handleImpersonate(selectedTeacher)"
+            class="px-4 py-2 bg-gray-200 hover:bg-primary hover:text-white text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
           >
-            <X class="w-5 h-5" />
+            <span>Login As Akun Ini</span>
           </button>
-        </div>
-
-        <div class="space-y-4 text-xs">
-          <!-- Petunjuk & Tombol Template -->
-          <div class="p-4 bg-blue-50/70 border border-blue-150 rounded-2xl space-y-2 text-blue-900">
-            <div class="flex items-center justify-between">
-              <span class="font-bold flex items-center gap-1.5">
-                <FileCode class="w-4 h-4 text-primary" />
-                Format Data JSON Guru & Staf:
-              </span>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  @click="fillTeacherTemplate"
-                  class="text-[11px] font-bold text-primary hover:underline cursor-pointer"
-                >
-                  Contoh Data
-                </button>
-                <span class="text-gray-300">•</span>
-                <button
-                  type="button"
-                  @click="downloadTeacherTemplate"
-                  class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Download class="w-3.5 h-3.5" />
-                  Unduh .json
-                </button>
-              </div>
-            </div>
-            <p class="text-[11px] text-blue-700 leading-relaxed font-mono bg-white/80 p-2.5 rounded-xl border border-blue-100">
-              [{"name": "Nama Guru, S.Kom", "nip_nis": "19900101...", "role": "GURU_PENGAJAR", "specialization": "Pemrograman Web", "email": "guru@sekolah.sch.id"}]
-            </p>
-            <p class="text-[11px] text-blue-600">
-              * Peran yang didukung: <code>GURU_PENGAJAR</code>, <code>GURU_PEMBIMBING</code>, atau <code>SUPERADMIN</code>. Kata sandi otomatis diatur ke <code>password123</code>.
-            </p>
-          </div>
-
-          <!-- File Upload Zone -->
-          <div>
-            <label class="block font-bold text-gray-700 mb-1.5">Unggah Berkas .JSON</label>
-            <div
-              @click="triggerFileInput"
-              class="border-2 border-dashed border-gray-200 hover:border-primary/60 hover:bg-blue-50/20 rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1.5"
-            >
-              <input
-                ref="fileInputRef"
-                type="file"
-                accept=".json,application/json"
-                @change="handleFileUpload"
-                class="hidden"
-              />
-              <UploadCloud class="w-7 h-7 text-gray-400" />
-              <div class="text-xs font-semibold text-gray-700">
-                <span class="text-primary hover:underline font-bold">Pilih berkas JSON</span> atau seret ke sini
-              </div>
-              <p class="text-[10px] text-gray-400">Mendukung format .json berisi array data guru & staf pengajar</p>
-              <div v-if="uploadedFileName" class="mt-1 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-bold text-[11px] flex items-center gap-1">
-                <Check class="w-3.5 h-3.5" />
-                <span>{{ uploadedFileName }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- JSON Editor / Paste Area -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="font-bold text-gray-700">Atau Tempel / Edit Kode JSON di Sini</label>
-              <span v-if="detectedTeacherCount > 0" class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Terdeteksi {{ detectedTeacherCount }} Akun Guru
-              </span>
-            </div>
-            <textarea
-              v-model="importJsonText"
-              rows="7"
-              placeholder='[
-  {
-    "name": "Bagas Pratama, S.Kom",
-    "nip_nis": "199001012015031001",
-    "role": "GURU_PENGAJAR",
-    "specialization": "Pemrograman Web & Mobile",
-    "email": "bagas.pratama@sekolah.sch.id"
-  }
-]'
-              class="w-full p-3 font-mono text-[11px] rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            ></textarea>
-          </div>
-
-          <!-- Alert jika ada error parse / server error -->
-          <div v-if="importError" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center justify-between">
-            <span>{{ importError }}</span>
-            <button @click="importError = ''" class="font-bold cursor-pointer"><X class="w-3.5 h-3.5" /></button>
-          </div>
-
-          <!-- Modal Actions -->
-          <div class="pt-3 border-t border-gray-150 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              @click="closeImportModal"
-              class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              :disabled="importing || !importJsonText.trim()"
-              @click="submitTeacherBulkImport"
-              class="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-            >
-              <UploadCloud class="w-4 h-4" />
-              <span>{{ importing ? 'Mengimpor Data...' : `Mulai Impor (${detectedTeacherCount} Guru)` }}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            @click="closeReviewModal"
+            class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+          >
+            Tutup Review
+          </button>
         </div>
       </div>
     </div>
@@ -713,6 +480,8 @@ import {
   UserCheck,
   BookOpen,
   Search,
+  Eye,
+  RefreshCw,
   Plus,
   Edit3,
   KeyRound,
@@ -728,6 +497,19 @@ import {
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
+
+const showReviewModal = ref(false)
+const selectedTeacher = ref<any>(null)
+
+function openReviewModal(teacher: any) {
+  selectedTeacher.value = teacher
+  showReviewModal.value = true
+}
+
+function closeReviewModal() {
+  showReviewModal.value = false
+  selectedTeacher.value = null
+}
 
 const showImportModal = ref(false)
 const importJsonText = ref('')

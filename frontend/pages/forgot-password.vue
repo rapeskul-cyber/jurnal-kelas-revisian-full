@@ -62,7 +62,7 @@
               v-model="email"
               type="email"
               required
-              placeholder="sekretaris@gmail.com"
+              placeholder=""
               class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
@@ -112,7 +112,7 @@
             type="text"
             maxlength="6"
             required
-            placeholder="000000"
+            placeholder=""
             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-center tracking-widest text-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
           <div class="flex items-center justify-between mt-2 text-[11px] text-gray-400">
