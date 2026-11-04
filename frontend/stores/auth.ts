@@ -130,7 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isDualRole = computed(() => {
     return (
       (user.value?.role === 'GURU_PENGAJAR' || user.value?.role === 'GURU_PEMBIMBING') &&
-      (!!(user.value as any)?.guided_class || !!(user.value as any)?.guidedClass)
+      (!!(user.value as any)?.guided_class || !!(user.value as any)?.guidedClass || !!user.value?.class_id)
     )
   })
 

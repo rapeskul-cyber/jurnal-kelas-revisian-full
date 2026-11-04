@@ -70,7 +70,8 @@ class AuthController extends Controller
         }
 
         // Cek apakah user adalah guru yang memiliki kelas perwalian (Wali Kelas)
-        $hasGuidedClass = \App\Models\SchoolClass::where('advisor_id', $user->id)->exists();
+        $hasGuidedClass = \App\Models\SchoolClass::where('advisor_id', $user->id)->exists()
+            || ($user->class_id && \App\Models\SchoolClass::where('id', $user->class_id)->exists());
         if (!$hasGuidedClass && $targetRole === 'GURU_PEMBIMBING') {
             return response()->json(['message' => 'Anda tidak terdaftar sebagai wali kelas dari kelas binaan manapun.'], 403);
         }

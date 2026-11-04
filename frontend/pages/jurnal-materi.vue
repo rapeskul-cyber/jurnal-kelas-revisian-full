@@ -662,7 +662,7 @@
       v-if="fillModalItem"
       class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs"
     >
-      <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pb-8 sm:pb-7 pb-safe">
+      <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pb-8 sm:pb-7 pb-safe">
         <!-- Mobile drag handle -->
         <div class="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto -mt-2 mb-3"></div>
         <div class="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -673,46 +673,117 @@
             <h3 class="text-base font-bold text-gray-900 mt-1">
               {{ fillModalItem.status === 'Menunggu' ? 'Edit Jurnal KBM (Revisi Sesi)' : 'Isi Jurnal KBM Hari Ini' }}
             </h3>
-            <p class="text-xs text-gray-400">Jadwal: {{ fillModalItem.time }}</p>
+            <p class="text-xs text-gray-400">Jadwal: {{ fillModalItem.time }} • Kelas: {{ fillModalItem.class || fillModalItem.school_class?.name || '-' }}</p>
           </div>
           <button @click="fillModalItem = null" class="text-gray-400 hover:text-gray-600 text-lg cursor-pointer">
             <XIcon class="w-4 h-4" />
           </button>
         </div>
 
-        <form @submit.prevent="submitFillJournal" class="space-y-3.5 text-xs">
+        <form @submit.prevent="submitFillJournal" class="space-y-4 text-xs">
+          <!-- Tabel Presensi Siswa Jam Ini Sesuai Gambar Wireframe: Nama Siswa | Hadir | Izin | Sakit | Alpha -->
+          <div class="border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+            <div class="bg-gray-50 px-3.5 py-2.5 border-b border-gray-200 flex items-center justify-between">
+              <span class="font-bold text-gray-900">Daftar Kehadiran Siswa Jam Ini</span>
+              <span class="text-[11px] text-gray-500">{{ modalStudentAttendance.length }} Siswa Terdaftar</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="border-b border-gray-100 text-gray-500 text-[11px] uppercase bg-white">
+                    <th class="py-2.5 px-3 text-left font-semibold">Nama Siswa</th>
+                    <th class="py-2.5 px-2 text-center font-semibold text-emerald-700">Hadir</th>
+                    <th class="py-2.5 px-2 text-center font-semibold text-blue-700">Izin</th>
+                    <th class="py-2.5 px-2 text-center font-semibold text-amber-700">Sakit</th>
+                    <th class="py-2.5 px-2 text-center font-semibold text-rose-700">Alpha</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50 bg-white">
+                  <tr v-for="student in modalStudentAttendance" :key="student.id" class="hover:bg-blue-50/20">
+                    <td class="py-2.5 px-3 font-semibold text-gray-900 whitespace-nowrap">
+                      {{ student.name }}
+                    </td>
+                    <!-- Hadir -->
+                    <td class="py-2.5 px-2 text-center">
+                      <label class="cursor-pointer inline-flex items-center justify-center p-1">
+                        <input
+                          type="radio"
+                          :name="'student_' + student.id"
+                          value="HADIR"
+                          v-model="student.status"
+                          class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </label>
+                    </td>
+                    <!-- Izin -->
+                    <td class="py-2.5 px-2 text-center">
+                      <label class="cursor-pointer inline-flex items-center justify-center p-1">
+                        <input
+                          type="radio"
+                          :name="'student_' + student.id"
+                          value="IZIN"
+                          v-model="student.status"
+                          class="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </label>
+                    </td>
+                    <!-- Sakit -->
+                    <td class="py-2.5 px-2 text-center">
+                      <label class="cursor-pointer inline-flex items-center justify-center p-1">
+                        <input
+                          type="radio"
+                          :name="'student_' + student.id"
+                          value="SAKIT"
+                          v-model="student.status"
+                          class="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        />
+                      </label>
+                    </td>
+                    <!-- Alpha -->
+                    <td class="py-2.5 px-2 text-center">
+                      <label class="cursor-pointer inline-flex items-center justify-center p-1">
+                        <input
+                          type="radio"
+                          :name="'student_' + student.id"
+                          value="ALPHA"
+                          v-model="student.status"
+                          class="w-4 h-4 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                        />
+                      </label>
+                    </td>
+                  </tr>
+                  <tr v-if="modalStudentAttendance.length === 0">
+                    <td colspan="5" class="py-4 text-center text-gray-400">Memuat data siswa kelas...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Input Materi Sesuai Gambar Wireframe: Materi : Project - - - - - -->
           <div>
-            <label class="block font-semibold text-gray-700 mb-1">Pokok Bahasan / KD</label>
+            <label class="block font-semibold text-gray-700 mb-1">Materi / Pokok Bahasan *</label>
             <input
               v-model="fillJournalForm.topic"
               type="text"
-              placeholder="Contoh: Implementasi State Management Pinia & Vue 3"
+              placeholder="Contoh: Project Pembuatan API Laravel & Vue 3"
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               required
             />
           </div>
 
           <div>
-            <label class="block font-semibold text-gray-700 mb-1">Rangkuman Aktivitas Pembelajaran</label>
+            <label class="block font-semibold text-gray-700 mb-1">Rangkuman Aktivitas & Catatan Kelas (Opsional)</label>
             <textarea
-              v-model="fillJournalForm.activity"
-              rows="3"
-              placeholder="Jelaskan ringkasan materi, praktikum laboratorium, dan ketercapaian kelas hari ini..."
+              v-model="fillJournalForm.notes"
+              rows="2"
+              placeholder="Catatan kelas, progres praktikum, atau tindak lanjut KBM..."
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-              required
             ></textarea>
           </div>
 
-          <div>
-            <label class="block font-semibold text-gray-700 mb-1">Catatan Khusus / Kondisi Kelas</label>
-            <input
-              v-model="fillJournalForm.notes"
-              type="text"
-              placeholder="Contoh: Praktikum tuntas 100%, seluruh PC lab berjalan normal"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-
+          <!-- Tombol Aksi: [ Batal ] dan [ Selesai ] Sesuai Wireframe -->
           <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -724,9 +795,9 @@
             <button
               type="submit"
               :disabled="savingFillJournal"
-              class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+              class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-2xs"
             >
-              {{ savingFillJournal ? 'Menyimpan...' : (fillModalItem.status === 'Menunggu' ? 'Simpan Perubahan' : 'Simpan & Sahkan Jurnal') }}
+              {{ savingFillJournal ? 'Menyimpan...' : 'Selesai' }}
             </button>
           </div>
         </form>
@@ -1199,6 +1270,8 @@ const confirmModalJournal = async () => {
   }
 }
 
+const modalStudentAttendance = ref<any[]>([])
+
 const openFillJournal = async (item: any) => {
   fillModalItem.value = item
   fillJournalForm.value.topic = item.topic || ''
@@ -1207,6 +1280,17 @@ const openFillJournal = async (item: any) => {
   selectedModalAbsentStudents.value = item.absent_students ? [...item.absent_students] : []
   searchModalStudentQuery.value = ''
   await fetchModalClassStudents(item.class_id)
+
+  const savedAttendance = item.student_attendance || []
+  modalStudentAttendance.value = modalClassStudents.value.map((s: any) => {
+    const prev = savedAttendance.find((sa: any) => sa.id === s.id)
+    return {
+      id: s.id,
+      name: s.name,
+      nis: s.nis,
+      status: prev ? prev.status : (s.today_status || 'HADIR')
+    }
+  })
 }
 
 const applyScheduleFilter = () => {
@@ -1351,6 +1435,16 @@ const submitFillJournal = async () => {
   if (!fillModalItem.value) return
   savingFillJournal.value = true
   try {
+    const absentStudents = modalStudentAttendance.value
+      .filter((s: any) => s.status !== 'HADIR')
+      .map((s: any) => ({ id: s.id, name: s.name, nis: s.nis, status: s.status }))
+
+    const studentAttendance = modalStudentAttendance.value.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status
+    }))
+
     await $fetch(`${config.public.apiBase}/journals/class`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${authStore.token}` },
@@ -1359,24 +1453,27 @@ const submitFillJournal = async () => {
         class_id: fillModalItem.value.class_id,
         type: 'class_agenda',
         topic: fillJournalForm.value.topic,
-        activity: fillJournalForm.value.activity,
+        activity: fillJournalForm.value.activity || fillJournalForm.value.topic,
         notes: fillJournalForm.value.notes,
-        absent_students: selectedModalAbsentStudents.value,
+        student_attendance: studentAttendance,
+        absent_students: absentStudents,
         date: new Date().toISOString().slice(0, 10)
       }
     })
-  } catch (err) {
-    console.error(err)
-  } finally {
+
     fillModalItem.value.status = 'Terverifikasi'
     fillModalItem.value.topic = fillJournalForm.value.topic
     fillModalItem.value.notes = fillJournalForm.value.notes || fillJournalForm.value.activity
-    fillModalItem.value.absent_students = [...selectedModalAbsentStudents.value]
+    fillModalItem.value.student_attendance = [...studentAttendance]
+    fillModalItem.value.absent_students = [...absentStudents]
     filledCount.value += 1
     successMsg.value = `Jurnal pelajaran ${fillModalItem.value.subject} berhasil disimpan & disahkan!`
     fillModalItem.value = null
     savingFillJournal.value = false
     fetchTeacherSchedulesAndJournals()
+  } catch (err) {
+    console.error(err)
+    savingFillJournal.value = false
   }
 }
 

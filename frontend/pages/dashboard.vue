@@ -11,6 +11,67 @@
         <div v-for="i in 4" :key="i" class="h-28 bg-gray-200 rounded-2xl"></div>
       </div>
 
+      <!-- ============================================================== -->
+      <!-- DUAL-ROLE MODE SWITCHER CARDS (Sesuai Wireframe: [Sebagai Pengajar] [Sebagai Walas]) -->
+      <!-- ============================================================== -->
+      <div v-if="authStore.isDualRole" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <button
+          type="button"
+          @click="handleSwitchRole('GURU_PENGAJAR')"
+          :disabled="isSwitchingRole"
+          class="flex items-center justify-between p-4 sm:p-5 rounded-2xl border-2 transition text-left cursor-pointer shadow-2xs active:scale-[0.99] disabled:opacity-50"
+          :class="authStore.user?.role === 'GURU_PENGAJAR'
+            ? 'border-primary bg-primary text-white shadow-md'
+            : 'border-gray-200 bg-white hover:border-primary/50 text-gray-700 hover:bg-blue-50/20'"
+        >
+          <div class="space-y-0.5">
+            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider block" :class="authStore.user?.role === 'GURU_PENGAJAR' ? 'text-blue-100' : 'text-gray-400'">Mode Guru Mapel</span>
+            <span class="text-sm sm:text-base font-extrabold block">Sebagai Pengajar</span>
+            <span class="text-[11px] block" :class="authStore.user?.role === 'GURU_PENGAJAR' ? 'text-blue-100' : 'text-gray-500'">Jadwal KBM & Isi Jurnal Pelajaran</span>
+          </div>
+          <span
+            v-if="authStore.user?.role === 'GURU_PENGAJAR'"
+            class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white text-primary border border-white/20 shrink-0"
+          >
+            Aktif ✓
+          </span>
+          <span
+            v-else
+            class="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 shrink-0"
+          >
+            Beralih →
+          </span>
+        </button>
+
+        <button
+          type="button"
+          @click="handleSwitchRole('GURU_PEMBIMBING')"
+          :disabled="isSwitchingRole"
+          class="flex items-center justify-between p-4 sm:p-5 rounded-2xl border-2 transition text-left cursor-pointer shadow-2xs active:scale-[0.99] disabled:opacity-50"
+          :class="authStore.user?.role === 'GURU_PEMBIMBING'
+            ? 'border-primary bg-primary text-white shadow-md'
+            : 'border-gray-200 bg-white hover:border-primary/50 text-gray-700 hover:bg-blue-50/20'"
+        >
+          <div class="space-y-0.5">
+            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider block" :class="authStore.user?.role === 'GURU_PEMBIMBING' ? 'text-blue-100' : 'text-gray-400'">Mode Wali Kelas</span>
+            <span class="text-sm sm:text-base font-extrabold block">Sebagai Walas</span>
+            <span class="text-[11px] block" :class="authStore.user?.role === 'GURU_PEMBIMBING' ? 'text-blue-100' : 'text-gray-500'">Pantau Rombel & Persetujuan Izin</span>
+          </div>
+          <span
+            v-if="authStore.user?.role === 'GURU_PEMBIMBING'"
+            class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white text-primary border border-white/20 shrink-0"
+          >
+            Aktif ✓
+          </span>
+          <span
+            v-else
+            class="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 shrink-0"
+          >
+            Beralih →
+          </span>
+        </button>
+      </div>
+
       <!-- ============================================== -->
       <!-- ROLE: SISWA (Presensi Mandiri & Jurnal Siswa)  -->
       <!-- ============================================== -->
@@ -131,6 +192,56 @@
           <StatCard title="Total Sakit" :value="data?.stats?.sakit_hari ?? '0 Hari'" subtext="Surat Terlampir" color="blue" />
           <StatCard title="Total Izin Disetujui" :value="data?.stats?.izin_hari ?? '0 Hari'" subtext="Disetujui Wali Kelas" color="blue" />
           <StatCard title="Alpha / Tanpa Kabar" :value="data?.stats?.alpha_hari ?? '0 Hari'" subtext="Tanpa Keterangan" color="blue" />
+        </div>
+
+        <!-- Rekap Kehadiran Siswa Per Guru Pengajar Hari Ini (Sesuai Wireframe: Hadir/Izin/Sakit/Alpha Pengajar 1, 2, 3) -->
+        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-5 shadow-2xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-gray-100 gap-1.5">
+            <div>
+              <h3 class="text-xs sm:text-sm font-bold text-gray-900">Rekap Presensi Per Guru Pengajar (Hari Ini)</h3>
+              <p class="text-[11px] text-gray-400">Status kehadiran per sesi KBM yang dicatat guru pengajar di kelas</p>
+            </div>
+            <span class="text-[10px] font-semibold text-primary bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 self-start sm:self-auto">
+              {{ data?.today_timeline?.length || 0 }} Sesi Pengajar
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div
+              v-for="(item, idx) in data?.today_timeline || []"
+              :key="idx"
+              class="p-3.5 rounded-xl border border-gray-150 bg-gray-50/50 hover:bg-white transition space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
+                  {{ item.pengajar_ke || ('Pengajar ' + (idx + 1)) }}
+                </span>
+                <span class="font-mono text-[11px] text-gray-500 font-semibold">{{ item.time }}</span>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-gray-900 truncate">{{ item.teacher_name }}</div>
+                <div class="text-[11px] text-gray-500 truncate">{{ item.subject }}</div>
+              </div>
+              <div class="pt-1.5 border-t border-gray-100 flex items-center justify-between">
+                <span class="text-[11px] text-gray-400">Presensi Sesi Ini:</span>
+                <span
+                  class="px-2.5 py-0.5 rounded-md text-xs font-bold inline-flex items-center gap-1"
+                  :class="[
+                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'HADIR' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'IZIN' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'SAKIT' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'ALPHA' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                    'bg-gray-100 text-gray-500 border border-gray-200'
+                  ]"
+                >
+                  {{ item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'Belum Selesai') }}
+                </span>
+              </div>
+            </div>
+            <div v-if="!data?.today_timeline?.length" class="col-span-full text-center py-4 text-gray-400 text-xs">
+              Belum ada jadwal KBM guru pengajar hari ini.
+            </div>
+          </div>
         </div>
 
         <!-- Widget Timeline Materi Belajar Hari Ini -->
@@ -1205,6 +1316,21 @@
                         {{ std.name }}
                       </span>
                     </div>
+
+                    <!-- Presensi Siswa yang Dicatat Guru Pengajar Jam Ini (Sesuai Wireframe) -->
+                    <div v-if="p.student_attendance && p.student_attendance.length > 0" class="pt-2 border-t border-gray-100 space-y-1">
+                      <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Presensi Murid Jam Ini:</span>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span
+                          v-for="std in p.student_attendance"
+                          :key="std.id"
+                          class="px-2 py-0.5 rounded-md text-[10px] font-bold border inline-flex items-center gap-1"
+                          :class="std.status === 'HADIR' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (std.status === 'IZIN' ? 'bg-blue-50 text-blue-700 border-blue-200' : (std.status === 'SAKIT' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'))"
+                        >
+                          {{ std.name }}: {{ std.status }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1480,6 +1606,19 @@ const isCheckingIn = ref(false)
 const checkInMessage = ref('')
 const selectedMajorFilter = ref('ALL')
 const studentJournalTab = ref<'journals' | 'materials'>('journals')
+const isSwitchingRole = ref(false)
+
+async function handleSwitchRole(targetRole: 'GURU_PENGAJAR' | 'GURU_PEMBIMBING') {
+  if (authStore.user?.role === targetRole || isSwitchingRole.value) return
+  isSwitchingRole.value = true
+  try {
+    await authStore.switchRole(targetRole)
+  } catch (err: any) {
+    toast.error(err?.data?.message || 'Gagal beralih mode peran.')
+  } finally {
+    isSwitchingRole.value = false
+  }
+}
 
 if (process.client) {
   try {
@@ -1506,7 +1645,7 @@ const dashboardTitle = computed(() => {
   if (role === 'ORANG_TUA') return 'Dashboard Pantauan Orang Tua Siswa'
   if (role === 'SEKRETARIS') return 'Dashboard Presensi ' + (data.value?.class_name || 'Kelas')
   if (role === 'GURU_PENGAJAR') return 'Dashboard Guru Pengajar'
-  if (role === 'GURU_PEMBIMBING') return (authStore.user?.name || 'Wali Kelas') + ' (Wali Kelas)'
+  if (role === 'GURU_PEMBIMBING') return 'Dashboard Wali Kelas'
   return 'Dashboard'
 })
 

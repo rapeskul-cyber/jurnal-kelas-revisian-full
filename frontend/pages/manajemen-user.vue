@@ -388,20 +388,20 @@
                 />
               </div>
 
-              <!-- Peran Sistem (Radio Buttons Sesuai Revisi) -->
+              <!-- Peran Sistem (2 Kolom Sesuai Wireframe "Pilihan Pertama") -->
               <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-2">
-                  Pilih Peran Sistem (Role Akun) *
+                <label class="block text-xs font-bold text-gray-800 mb-2">
+                  Pilihan Pertama (Peran Pengguna) *
                 </label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2.5">
                   <label
                     v-for="r in [
-                      { value: 'GURU_PEMBIMBING', label: 'Wali Kelas', desc: 'Kelola kelas binaan' },
                       { value: 'GURU_PENGAJAR', label: 'Guru Pengajar', desc: 'Isi KBM & materi' },
-                      { value: 'SEKRETARIS', label: 'Sekretaris', desc: 'Verifikasi hadir' },
                       { value: 'SISWA', label: 'Siswa', desc: 'Presensi mandiri' },
+                      { value: 'GURU_PEMBIMBING', label: 'Wali Kelas', desc: 'Kelola kelas binaan' },
+                      { value: 'SEKRETARIS', label: 'Sekretaris', desc: 'Verifikasi hadir' },
                       { value: 'ORANG_TUA', label: 'Orang Tua', desc: 'Pantau kehadiran' },
-                      { value: 'SUPERADMIN', label: 'Superadmin', desc: 'Maks. 3 akun' }
+                      { value: 'SUPERADMIN', label: 'Super Administrator', desc: 'Maks. 3 akun' }
                     ]"
                     :key="r.value"
                     class="flex flex-col p-2.5 rounded-xl border cursor-pointer transition select-none"

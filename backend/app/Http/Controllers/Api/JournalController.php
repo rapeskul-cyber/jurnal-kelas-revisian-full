@@ -95,12 +95,14 @@ class JournalController extends Controller
         $journals = $query->get()->map(function ($j) {
             $timeSlot = ($j->schedule->start_time ?? '07:30') . ' - ' . ($j->schedule->end_time ?? '09:00');
             $absentStudents = [];
+            $studentAttendance = [];
             $displayNotes = $j->notes;
             if ($j->notes && str_starts_with(trim($j->notes), '{')) {
                 $decoded = json_decode($j->notes, true);
                 if (is_array($decoded)) {
                     $displayNotes = $decoded['notes'] ?? '';
                     $absentStudents = $decoded['absent_students'] ?? [];
+                    $studentAttendance = $decoded['student_attendance'] ?? [];
                 }
             }
 
@@ -119,6 +121,7 @@ class JournalController extends Controller
                 'activity' => $j->activity,
                 'notes' => $displayNotes,
                 'absent_students' => $absentStudents,
+                'student_attendance' => $studentAttendance,
                 'status' => $j->verification_status,
                 'confirmed_at' => $j->confirmed_at ? Carbon::parse($j->confirmed_at)->format('d M Y H:i') : null,
                 'confirmed_by' => $j->confirmedBy->name ?? null,
@@ -136,11 +139,25 @@ class JournalController extends Controller
 
     public function getClassStudents(Request $request, $classId)
     {
+        $today = Carbon::today()->toDateString();
+        $session = AttendanceSession::where('class_id', $classId)->whereDate('date', $today)->first();
+        $records = $session ? AttendanceRecord::where('session_id', $session->id)->get()->keyBy('student_id') : collect();
+
         $students = User::where('class_id', $classId)
             ->whereIn('role', ['SISWA', 'SEKRETARIS'])
             ->orderBy('name')
             ->select('id', 'name', 'nip_nis as nis', 'class_id')
-            ->get();
+            ->get()
+            ->map(function ($s) use ($records) {
+                $rec = $records->get($s->id);
+                return [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'nis' => $s->nis,
+                    'class_id' => $s->class_id,
+                    'today_status' => $rec ? $rec->status : 'HADIR',
+                ];
+            });
 
         return response()->json($students);
     }
@@ -236,11 +253,13 @@ class JournalController extends Controller
             $confirmedAt = Carbon::now();
         }
 
+        $studentAttendance = $request->input('student_attendance', []);
         $absentStudents = $request->input('absent_students', []);
         $notesInput = $request->input('notes', '');
-        if (!empty($absentStudents) && is_array($absentStudents)) {
+        if (!empty($studentAttendance) || !empty($absentStudents)) {
             $notesToStore = json_encode([
                 'notes' => $notesInput ?: '',
+                'student_attendance' => $studentAttendance,
                 'absent_students' => $absentStudents,
             ], JSON_UNESCAPED_UNICODE);
         } else {
@@ -325,26 +344,31 @@ class JournalController extends Controller
 
         $activity = $request->topic ? ($request->topic . ' - ' . $request->activity) : ($request->activity ?: $journal->activity);
 
+        $studentAttendance = $request->input('student_attendance');
         $absentStudents = $request->input('absent_students');
         $notesInput = $request->input('notes');
 
         $notesToStore = $journal->notes;
-        if ($absentStudents !== null || $notesInput !== null) {
+        if ($absentStudents !== null || $notesInput !== null || $studentAttendance !== null) {
             $currentAbsent = [];
+            $currentStudentAttendance = [];
             $currentText = $journal->notes;
             if ($journal->notes && str_starts_with(trim($journal->notes), '{')) {
                 $dec = json_decode($journal->notes, true);
                 if (is_array($dec)) {
                     $currentAbsent = $dec['absent_students'] ?? [];
+                    $currentStudentAttendance = $dec['student_attendance'] ?? [];
                     $currentText = $dec['notes'] ?? '';
                 }
             }
             $finalAbsent = $absentStudents !== null ? $absentStudents : $currentAbsent;
+            $finalStudentAttendance = $studentAttendance !== null ? $studentAttendance : $currentStudentAttendance;
             $finalText = $notesInput !== null ? $notesInput : $currentText;
 
-            if (!empty($finalAbsent) && is_array($finalAbsent)) {
+            if (!empty($finalAbsent) || !empty($finalStudentAttendance) || $finalText) {
                 $notesToStore = json_encode([
                     'notes' => $finalText ?: '',
+                    'student_attendance' => $finalStudentAttendance,
                     'absent_students' => $finalAbsent,
                 ], JSON_UNESCAPED_UNICODE);
             } else {

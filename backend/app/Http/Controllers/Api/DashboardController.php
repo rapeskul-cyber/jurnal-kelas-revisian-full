@@ -222,7 +222,7 @@ class DashboardController extends Controller
             'recent_attendance' => $recentAttendance,
             'recent_materials' => $recentMaterials,
             'recent_journals' => $recentJournals,
-            'today_timeline' => $this->getTodayTimeline($classId, $today),
+            'today_timeline' => $this->getTodayTimeline($classId, $today, $user->id),
         ]);
     }
 
@@ -391,7 +391,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getTodayTimeline($classId, $today)
+    private function getTodayTimeline($classId, $today, $studentId = null)
     {
         $daysMap = [
             1 => 'Senin',
@@ -445,15 +445,26 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('subject_id');
 
-        return $schedules->values()->map(function ($sch, $index) use ($todayJournals, $todayMaterialsBySchedule, $todayMaterialsBySubject) {
+        return $schedules->values()->map(function ($sch, $index) use ($todayJournals, $todayMaterialsBySchedule, $todayMaterialsBySubject, $studentId) {
             $journal = $todayJournals->get($sch->id);
             $absentStudents = [];
+            $studentAttendance = [];
+            $studentStatus = null;
             $notes = $journal?->notes;
             if ($notes && str_starts_with(trim($notes), '{')) {
                 $dec = json_decode($notes, true);
                 if (is_array($dec)) {
                     $absentStudents = $dec['absent_students'] ?? [];
+                    $studentAttendance = $dec['student_attendance'] ?? [];
                     $notes = $dec['notes'] ?? '';
+                    if ($studentId && !empty($studentAttendance)) {
+                        foreach ($studentAttendance as $sa) {
+                            if (($sa['id'] ?? null) == $studentId) {
+                                $studentStatus = $sa['status'] ?? null;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -470,11 +481,14 @@ class DashboardController extends Controller
 
             return [
                 'jam_ke' => 'Jam Ke-' . ($index + 1),
+                'pengajar_ke' => 'Pengajar ' . ($index + 1),
                 'time' => $sch->start_time . ' - ' . $sch->end_time,
                 'room' => $sch->room ?: 'Ruang Kelas',
                 'subject' => $sch->subject->name ?? 'Mata Pelajaran',
                 'subject_code' => $sch->subject->code ?? '',
                 'teacher_name' => $sch->teacher->name ?? 'Guru Pengajar',
+                'student_status' => $studentStatus,
+                'student_attendance' => $studentAttendance,
                 'topic' => $journal?->activity ?? ($mat?->topic ?? 'Menunggu KBM dimulai'),
                 'notes' => $notes ?: ($mat?->assignment ?? ''),
                 'absent_students' => $absentStudents,
@@ -838,10 +852,12 @@ class DashboardController extends Controller
             $isCurrent = ($nowStr >= $startStr && $nowStr <= $endStr);
 
             $absentList = [];
+            $studentAttendanceList = [];
             if ($journal && $journal->notes && str_starts_with(trim($journal->notes), '{')) {
                 $dec = json_decode($journal->notes, true);
-                if (is_array($dec) && !empty($dec['absent_students'])) {
-                    $absentList = $dec['absent_students'];
+                if (is_array($dec)) {
+                    $absentList = $dec['absent_students'] ?? [];
+                    $studentAttendanceList = $dec['student_attendance'] ?? [];
                 }
             }
 
@@ -862,6 +878,7 @@ class DashboardController extends Controller
                 'journal_filled' => !!$journal,
                 'journal_verified' => ($journal && $journal->verification_status === 'TERVERIFIKASI'),
                 'absent_students' => $absentList,
+                'student_attendance' => $studentAttendanceList,
                 'absent_count' => count($absentList),
                 'present_count' => max(0, $totalStudents - count($absentList)),
             ];
