@@ -560,7 +560,7 @@
               placeholder=""
               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
-            <p class="text-[10px] text-gray-400 mt-1">Digunakan untuk menerima notifikasi presensi mandiri, surat izin, dan OTP WhatsApp.</p>
+            <p class="text-[10px] text-gray-400 mt-1">Digunakan untuk menerima notifikasi presensi kehadiran, surat izin, dan OTP WhatsApp.</p>
           </div>
 
           <div>

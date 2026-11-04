@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 flex flex-col">
     <AppHeader
-      title="Monitoring & Rekap Presensi Mandiri Kelas"
+      title="Monitoring & Rekap Presensi Kelas"
       :subtitle="dateFormatted + ' • ' + displayClassName"
     />
 
@@ -251,7 +251,7 @@
                       <span
                         v-if="student.status === 'BELUM_ABSEN'"
                         class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200 shrink-0"
-                        title="Siswa belum melakukan presensi mandiri"
+                        title="Siswa belum tercatat presensi"
                       >
                         Belum Absen
                       </span>
@@ -697,7 +697,7 @@ function exportWord() {
       <div class="kop">
         <h2>SMK NEGERI 71 JAKARTA</h2>
         <h3>AGENDA & REKAPITULASI PRESENSI HARIAN KELAS</h3>
-        <p style="margin:2px 0 0 0; font-size:9pt; color:#666;">Sistem Informasi Jurnal Kelas Digital Mandiri</p>
+        <p style="margin:2px 0 0 0; font-size:9pt; color:#666;">Sistem Informasi Jurnal Kelas Digital</p>
       </div>
 
       <table class="meta-table">

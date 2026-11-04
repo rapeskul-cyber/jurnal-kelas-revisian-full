@@ -6,7 +6,7 @@ export interface MenuItem {
 
 export const ROLE_MENUS: Record<string, MenuItem[]> = {
   SISWA: [
-    { name: 'Dashboard Mandiri', to: '/dashboard', icon: 'Home' },
+    { name: 'Dashboard', to: '/dashboard', icon: 'Home' },
     { name: 'Jurnal Kegiatan', to: '/jurnal-pelajaran', icon: 'BookOpen' },
     { name: 'Pengajuan Surat Izin', to: '/surat-izin', icon: 'Mail' },
     { name: 'Riwayat Kehadiran', to: '/riwayat-kehadiran', icon: 'CalendarCheck' },

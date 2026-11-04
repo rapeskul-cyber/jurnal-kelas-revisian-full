@@ -73,15 +73,15 @@
       </div>
 
       <!-- ============================================== -->
-      <!-- ROLE: SISWA (Presensi Mandiri & Jurnal Siswa)  -->
+      <!-- ROLE: SISWA (Status Kehadiran & Jadwal KBM)   -->
       <!-- ============================================== -->
       <template v-else-if="authStore.user?.role === 'SISWA'">
-        <!-- Kartu Presensi Mandiri Siswa Hari Ini (Tanpa Perlu Diabsen Sekretaris Satu-Satu) -->
+        <!-- Kartu Status Kehadiran Siswa Hari Ini -->
         <div class="bg-white rounded-2xl border border-blue-200 p-4 sm:p-6 shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div class="space-y-1.5">
             <div class="flex flex-wrap items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-primary border border-blue-200">
-                Presensi Mandiri Siswa
+                Status Kehadiran Siswa
               </span>
               <span class="text-xs text-gray-500 font-medium">
                 {{ data?.today_attendance?.date_formatted || 'Hari Ini' }} • {{ authStore.user?.school_class?.name || '-' }}
@@ -103,12 +103,12 @@
                   data?.today_attendance?.is_leave_rejected ? 'Surat Izin Ditolak' :
                   data?.today_attendance?.is_leave_approved ? `Izin Disetujui (${data?.today_attendance?.status})` :
                   data?.today_attendance?.checked_in ? (data?.today_attendance?.status || 'HADIR') :
-                  data?.today_attendance?.has_pending_leave ? 'Menunggu Persetujuan Izin' : 'Belum Presensi'
+                  data?.today_attendance?.has_pending_leave ? 'Menunggu Persetujuan Izin' : 'Menunggu Jam KBM'
                 }}
               </span>
             </h3>
             <p class="text-xs text-gray-500">
-              {{ checkInMessage || data?.today_attendance?.note || (data?.today_attendance?.checked_in ? 'Presensi mandiri Anda hari ini telah berhasil dicatat.' : 'Klik tombol Konfirmasi Hadir Mandiri di bawah untuk mencatat kehadiran hari ini.') }}
+              {{ data?.today_attendance?.note || (data?.today_attendance?.checked_in ? 'Kehadiran Anda hari ini telah dicatat oleh guru di kelas.' : 'Status kehadiran dicatat oleh Guru Pengajar pada saat jam pelajaran berlangsung.') }}
             </p>
           </div>
 
@@ -120,7 +120,7 @@
             >
               <div class="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold shadow-2xs flex items-center justify-center sm:justify-start gap-2">
                 <XCircle class="w-4 h-4 text-rose-600 flex-shrink-0" />
-                <span>Surat Izin Ditolak (Wajib Lapor ke Kelas)</span>
+                <span>Surat Izin Ditolak (Wajib Hadir di Kelas)</span>
               </div>
               <NuxtLink
                 to="/surat-izin"
@@ -139,13 +139,13 @@
               <span>Surat Izin Disetujui ({{ data?.today_attendance?.status }})</span>
             </div>
 
-            <!-- Jika Sudah Presensi Mandiri HADIR -->
+            <!-- Jika Sudah Tercatat HADIR -->
             <div
               v-else-if="data?.today_attendance?.checked_in"
               class="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto min-h-[44px]"
             >
               <CheckCircle2 class="w-4 h-4 text-emerald-600" />
-              <span>Sudah Presensi ({{ data?.today_attendance?.status || 'HADIR' }})</span>
+              <span>Tercatat Hadir ({{ data?.today_attendance?.status || 'HADIR' }})</span>
             </div>
 
             <div
@@ -155,18 +155,6 @@
               <Clock class="w-4 h-4 text-amber-600" />
               <span>Izin Menunggu Persetujuan</span>
             </div>
-
-            <!-- Tombol Konfirmasi Hadir Mandiri: Muncul jika belum presensi DAN bukan karena izin ditolak (karena jika izin ditolak wajib verifikasi fisik oleh Sekretaris di kelas) -->
-            <button
-              v-if="!data?.today_attendance?.checked_in && !data?.today_attendance?.is_leave_approved && !data?.today_attendance?.has_pending_leave && !data?.today_attendance?.is_leave_rejected"
-              type="button"
-              @click="handleSelfCheckIn"
-              :disabled="isCheckingIn"
-              class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
-            >
-              <CheckCircle2 class="w-4 h-4" />
-              <span>{{ isCheckingIn ? 'Menyimpan...' : 'Konfirmasi Hadir Mandiri' }}</span>
-            </button>
 
             <NuxtLink
               to="/surat-izin"
@@ -192,56 +180,6 @@
           <StatCard title="Total Sakit" :value="data?.stats?.sakit_hari ?? '0 Hari'" subtext="Surat Terlampir" color="blue" />
           <StatCard title="Total Izin Disetujui" :value="data?.stats?.izin_hari ?? '0 Hari'" subtext="Disetujui Wali Kelas" color="blue" />
           <StatCard title="Alpha / Tanpa Kabar" :value="data?.stats?.alpha_hari ?? '0 Hari'" subtext="Tanpa Keterangan" color="blue" />
-        </div>
-
-        <!-- Rekap Kehadiran Siswa Per Guru Pengajar Hari Ini (Sesuai Wireframe: Hadir/Izin/Sakit/Alpha Pengajar 1, 2, 3) -->
-        <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-5 shadow-2xs space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-gray-100 gap-1.5">
-            <div>
-              <h3 class="text-xs sm:text-sm font-bold text-gray-900">Rekap Presensi Per Guru Pengajar (Hari Ini)</h3>
-              <p class="text-[11px] text-gray-400">Status kehadiran per sesi KBM yang dicatat guru pengajar di kelas</p>
-            </div>
-            <span class="text-[10px] font-semibold text-primary bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 self-start sm:self-auto">
-              {{ data?.today_timeline?.length || 0 }} Sesi Pengajar
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div
-              v-for="(item, idx) in data?.today_timeline || []"
-              :key="idx"
-              class="p-3.5 rounded-xl border border-gray-150 bg-gray-50/50 hover:bg-white transition space-y-2"
-            >
-              <div class="flex items-center justify-between">
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800">
-                  {{ item.pengajar_ke || ('Pengajar ' + (idx + 1)) }}
-                </span>
-                <span class="font-mono text-[11px] text-gray-500 font-semibold">{{ item.time }}</span>
-              </div>
-              <div>
-                <div class="text-xs font-bold text-gray-900 truncate">{{ item.teacher_name }}</div>
-                <div class="text-[11px] text-gray-500 truncate">{{ item.subject }}</div>
-              </div>
-              <div class="pt-1.5 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-[11px] text-gray-400">Presensi Sesi Ini:</span>
-                <span
-                  class="px-2.5 py-0.5 rounded-md text-xs font-bold inline-flex items-center gap-1"
-                  :class="[
-                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'HADIR' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'IZIN' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'SAKIT' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                    (item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'MENUNGGU')) === 'ALPHA' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                    'bg-gray-100 text-gray-500 border border-gray-200'
-                  ]"
-                >
-                  {{ item.student_status || (item.status === 'TERLAKSANA' ? (data?.today_attendance?.status || 'HADIR') : 'Belum Selesai') }}
-                </span>
-              </div>
-            </div>
-            <div v-if="!data?.today_timeline?.length" class="col-span-full text-center py-4 text-gray-400 text-xs">
-              Belum ada jadwal KBM guru pengajar hari ini.
-            </div>
-          </div>
         </div>
 
         <!-- Widget Timeline Materi Belajar Hari Ini -->
@@ -809,7 +747,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <h3 class="text-sm font-bold text-gray-900">Riwayat Kehadiran Harian Anak</h3>
-                <p class="text-xs text-gray-400">Catatan jam presensi mandiri dan surat izin siswa</p>
+                <p class="text-xs text-gray-400">Catatan kehadiran dan surat izin siswa</p>
               </div>
               <NuxtLink to="/surat-izin" class="text-xs text-primary font-semibold hover:underline">
                 Riwayat Izin →
@@ -897,17 +835,6 @@
 
             <!-- Quick Action Buttons for Secretary's Personal Attendance -->
             <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
-              <button
-                v-if="!data?.self_attendance?.checked_in && !data?.self_attendance?.is_leave_approved && !data?.self_attendance?.has_pending_leave && !data?.self_attendance?.is_leave_rejected"
-                type="button"
-                @click="handleSelfCheckIn"
-                :disabled="isCheckingIn"
-                class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
-              >
-                <CheckCircle2 class="w-4 h-4" />
-                <span>{{ isCheckingIn ? 'Menyimpan...' : 'Presensi Hadir Mandiri' }}</span>
-              </button>
-
               <NuxtLink
                 to="/surat-izin"
                 class="px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-primary text-gray-700 hover:text-primary text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto min-h-[44px]"
@@ -939,8 +866,8 @@
         <div class="bg-white rounded-2xl border border-gray-150 p-4 sm:p-6 shadow-2xs">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h3 class="text-sm font-bold text-gray-900">Rekap Presensi Mandiri {{ data?.class_name || 'Kelas' }} Hari Ini</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Data terisi otomatis dari Presensi Mandiri Siswa & Surat Izin yang disetujui Wali Kelas</p>
+              <h3 class="text-sm font-bold text-gray-900">Rekap Presensi {{ data?.class_name || 'Kelas' }} Hari Ini</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Data terisi dari Presensi Guru Pengajar & Surat Izin yang disetujui Wali Kelas</p>
             </div>
             <div class="flex items-center gap-2">
               <NuxtLink
@@ -1647,7 +1574,7 @@ const filteredClassesMonitoring = computed(() => {
 const dashboardTitle = computed(() => {
   const role = authStore.user?.role
   if (role === 'SUPERADMIN') return 'Dashboard Super Administrator'
-  if (role === 'SISWA') return 'Dashboard Presensi Mandiri Siswa'
+  if (role === 'SISWA') return 'Dashboard Siswa'
   if (role === 'ORANG_TUA') return 'Dashboard Pantauan Orang Tua Siswa'
   if (role === 'SEKRETARIS') return 'Dashboard Presensi ' + (data.value?.class_name || 'Kelas')
   if (role === 'GURU_PENGAJAR') return 'Dashboard Guru Pengajar'

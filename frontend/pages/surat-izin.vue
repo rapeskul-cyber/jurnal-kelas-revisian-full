@@ -23,7 +23,7 @@
           <div class="border-b border-gray-100 pb-3">
             <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
               <MailIcon class="w-5 h-5 text-primary" />
-              Formulir Permohonan Izin Mandiri
+              Formulir Permohonan Izin Siswa
             </h2>
             <p class="text-xs text-gray-400 mt-0.5">Surat izin akan langsung diteruskan ke Wali Kelas untuk diverifikasi</p>
           </div>
@@ -43,7 +43,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-primary">Informasi Pemohon (Otomatis)</span>
                 <span class="px-2 py-0.5 rounded-md bg-blue-50 text-primary text-[10px] font-semibold border border-blue-200">
-                  Pengajuan Mandiri Siswa
+                  Pengajuan Surat Izin Siswa
                 </span>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">

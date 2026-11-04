@@ -1,21 +1,10 @@
 <template>
   <div class="flex-1 flex flex-col">
     <AppHeader
-      :title="authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Kehadiran Lengkap Anak' : 'Riwayat & Presensi Mandiri Siswa'"
+      :title="authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Kehadiran Lengkap Anak' : 'Riwayat Kehadiran Siswa'"
     >
       <template #actions>
-        <div class="hidden sm:flex items-center gap-2">
-          <button
-            v-if="authStore.user?.role === 'SISWA' || authStore.user?.role === 'SEKRETARIS'"
-            @click="handleSelfCheckIn"
-            :disabled="isCheckingIn"
-            type="button"
-            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 min-h-[40px]"
-            title="Presensi Mandiri Hari Ini"
-          >
-            <CheckCircle2Icon class="w-3.5 h-3.5 shrink-0" />
-            <span>{{ isCheckingIn ? 'Menyimpan...' : 'Presensi Mandiri Hari Ini' }}</span>
-          </button>
+        <div class="flex items-center gap-2">
           <button
             @click="exportCsv"
             type="button"
@@ -30,38 +19,6 @@
     </AppHeader>
 
     <main class="px-4 sm:px-8 pb-8 space-y-5">
-      <!-- Mobile Quick Presensi Card for Siswa / Sekretaris -->
-      <div
-        v-if="authStore.user?.role === 'SISWA' || authStore.user?.role === 'SEKRETARIS'"
-        class="sm:hidden bg-white rounded-2xl border border-blue-200 p-4 shadow-2xs space-y-3"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-xs font-bold text-gray-900">Presensi Mandiri Hari Ini</span>
-          </div>
-          <span class="text-[11px] text-gray-500 font-mono">{{ new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
-        </div>
-        <p class="text-xs text-gray-500">Klik tombol di bawah untuk mencatat kehadiran harian Anda langsung dari HP tanpa antrean.</p>
-        <button
-          @click="handleSelfCheckIn"
-          :disabled="isCheckingIn"
-          type="button"
-          class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition disabled:opacity-50 cursor-pointer min-h-[44px]"
-        >
-          <CheckCircle2Icon class="w-4 h-4 shrink-0" />
-          <span>{{ isCheckingIn ? 'Menyimpan Presensi...' : 'Konfirmasi Hadir Mandiri' }}</span>
-        </button>
-      </div>
-      <!-- Alert Toast if Checked In -->
-      <div v-if="checkInMsg" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-2xs">
-        <div class="flex items-center gap-2 text-xs font-semibold">
-          <CheckCircle2Icon class="w-4 h-4 text-emerald-600" />
-          <span>{{ checkInMsg }}</span>
-        </div>
-        <button @click="checkInMsg = ''" class="text-emerald-600 hover:text-emerald-800 text-xs font-bold cursor-pointer"><X class="w-3.5 h-3.5" /></button>
-      </div>
-
       <!-- 4 Stat Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Hadir Bulan Ini" :value="(summary?.hadir ?? 0) + ' Hari'" :subtext="(summary?.hadir_percent ?? 0) + '% Kehadiran'" color="green" />

@@ -120,7 +120,7 @@ class DashboardController extends Controller
         } elseif ($todayRecord) {
             $todayRecordObj = (object) [
                 'status' => $todayRecord->status,
-                'note' => $todayRecord->note ?: 'Presensi Mandiri Terverifikasi',
+                'note' => $todayRecord->note ?: 'Hadir Terverifikasi',
                 'is_leave_approved' => in_array($todayRecord->status, ['SAKIT', 'IZIN']),
                 'is_leave_rejected' => false,
             ];
@@ -137,7 +137,7 @@ class DashboardController extends Controller
                     'id' => $rec->id,
                     'date' => Carbon::parse($rec->session->date)->translatedFormat('l, d M Y'),
                     'status' => $rec->status,
-                    'note' => $rec->note ?: 'Presensi Mandiri Terverifikasi',
+                    'note' => $rec->note ?: 'Hadir Terverifikasi',
                     'school_hours' => $rec->session->school_hours,
                 ];
             });
@@ -190,7 +190,7 @@ class DashboardController extends Controller
                 'is_leave_rejected' => false,
                 'has_pending_leave' => false,
                 'status' => $todayRecordObj->status,
-                'note' => $todayRecordObj->note ?: 'Presensi Mandiri Terverifikasi',
+                'note' => $todayRecordObj->note ?: 'Hadir Terverifikasi',
                 'date_formatted' => Carbon::parse($today)->translatedFormat('l, d F Y'),
             ] : ($rejectedLeave ? [
                 'checked_in' => false,
@@ -200,7 +200,7 @@ class DashboardController extends Controller
                 'has_pending_leave' => false,
                 'status' => 'DITOLAK',
                 'rejection_reason' => $rejectedLeave->review_note ?: 'Tidak memenuhi syarat izin sekolah.',
-                'note' => 'Permohonan surat izin Anda telah DITOLAK oleh Wali Kelas ("' . ($rejectedLeave->review_note ?: 'Tidak memenuhi syarat izin.') . '"). Presensi mandiri dinonaktifkan. Silakan hadir ke sekolah dan melapor ke Sekretaris Kelas untuk verifikasi kehadiran fisik Anda.',
+                'note' => 'Permohonan surat izin Anda telah DITOLAK oleh Wali Kelas ("' . ($rejectedLeave->review_note ?: 'Tidak memenuhi syarat izin.') . '"). Silakan hadir ke sekolah dan melapor ke Guru / Wali Kelas untuk verifikasi kehadiran fisik Anda.',
                 'date_formatted' => Carbon::parse($today)->translatedFormat('l, d F Y'),
             ] : ($pendingLeave ? [
                 'checked_in' => false,
@@ -216,7 +216,7 @@ class DashboardController extends Controller
                 'is_leave_rejected' => false,
                 'has_pending_leave' => false,
                 'status' => 'BELUM_PRESENSI',
-                'note' => 'Silakan klik tombol Konfirmasi Hadir Mandiri di bawah untuk mencatat kehadiran hari ini.',
+                'note' => 'Status kehadiran dicatat oleh Guru Pengajar pada saat jam pelajaran berlangsung.',
                 'date_formatted' => Carbon::parse($today)->translatedFormat('l, d F Y'),
             ])),
             'recent_attendance' => $recentAttendance,
@@ -541,7 +541,7 @@ class DashboardController extends Controller
         $selfLeave = $todayLeaves->where('student_id', $user->id)->sortByDesc('id')->first();
 
         $selfStatus = 'BELUM_PRESENSI';
-        $selfNote = 'Belum melakukan presensi mandiri hari ini';
+        $selfNote = 'Belum tercatat presensi hari ini';
         $selfCheckedIn = false;
         $isSelfLeaveRejected = false;
         $isSelfLeaveApproved = false;
@@ -556,7 +556,7 @@ class DashboardController extends Controller
         } elseif ($selfLeave && $selfLeave->status === 'REJECTED') {
             $isSelfLeaveRejected = true;
             $selfRejectionReason = $selfLeave->review_note ?: 'Tidak memenuhi syarat izin.';
-            if ($selfRecord && $selfRecord->status === 'HADIR' && !str_contains($selfRecord->note ?? '', 'Presensi Mandiri Pukul')) {
+            if ($selfRecord && $selfRecord->status === 'HADIR') {
                 $selfStatus = 'HADIR';
                 $selfNote = $selfRecord->note ?: 'Diverifikasi Hadir Fisik di Kelas';
                 $selfCheckedIn = true;
@@ -571,7 +571,7 @@ class DashboardController extends Controller
             $selfNote = 'Permohonan surat izin Anda (' . $selfLeave->type . ') sedang menunggu persetujuan Wali Kelas.';
         } elseif ($selfRecord && $selfSessionToday && $selfRecord->session_id === $selfSessionToday->id) {
             $selfStatus = $selfRecord->status;
-            $selfNote = $selfRecord->note ?: 'Presensi Mandiri Terverifikasi';
+            $selfNote = $selfRecord->note ?: 'Hadir Terverifikasi';
             $selfCheckedIn = true;
         }
 

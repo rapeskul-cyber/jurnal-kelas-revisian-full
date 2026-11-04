@@ -123,7 +123,7 @@ class AttendanceController extends Controller
                         $note = 'Otomatis Alpa (Melewati batas presensi 06:30 WIB)';
                     } else {
                         $status = 'BELUM_ABSEN';
-                        $note = 'Menunggu presensi mandiri siswa';
+                        $note = 'Menunggu presensi guru pengajar';
                     }
                 } else {
                     $status = 'BELUM_ABSEN';
@@ -643,12 +643,12 @@ class AttendanceController extends Controller
                     elseif ($status === 'ALPHA') $note = 'Alpa';
                     else $note = $status;
                 } else {
-                    $note = $rec->note ?: 'Presensi Mandiri Terverifikasi';
+                    $note = $rec->note ?: 'Hadir';
                 }
             } else {
                 if ($session->status === 'DRAFT' && $dateStr === $todayStr) {
                     $status = 'BELUM_PRESENSI';
-                    $note = $isParent ? 'Belum Presensi' : 'Belum melakukan presensi mandiri hari ini';
+                    $note = $isParent ? 'Belum Presensi' : 'Belum tercatat presensi hari ini';
                 } else {
                     $status = 'ALPHA';
                     $note = $isParent ? 'Alpa' : 'Tidak hadir tanpa keterangan';
@@ -748,7 +748,7 @@ class AttendanceController extends Controller
                 'name' => $std->name,
                 'nis' => $std->nip_nis ?? '-',
                 'status' => $rec ? $rec->status : 'ALPHA',
-                'time_note' => $rec && $rec->note ? $rec->note : ($rec && $rec->status === 'HADIR' ? 'Presensi Mandiri - 06:52' : '-'),
+                'time_note' => $rec && $rec->note ? $rec->note : ($rec && $rec->status === 'HADIR' ? 'Hadir' : '-'),
                 'verification' => 'Terverifikasi',
             ];
         });

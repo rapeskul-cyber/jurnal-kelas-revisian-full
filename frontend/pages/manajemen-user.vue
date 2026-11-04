@@ -440,7 +440,7 @@
                   <label
                     v-for="r in [
                       { value: 'GURU_PENGAJAR', label: 'Guru Pengajar', desc: 'Isi KBM & materi' },
-                      { value: 'SISWA', label: 'Siswa', desc: 'Presensi mandiri' },
+                      { value: 'SISWA', label: 'Siswa', desc: 'Akses siswa kelas' },
                       { value: 'GURU_PEMBIMBING', label: 'Wali Kelas', desc: 'Kelola kelas binaan' },
                       { value: 'SEKRETARIS', label: 'Sekretaris', desc: 'Verifikasi hadir' },
                       { value: 'ORANG_TUA', label: 'Orang Tua', desc: 'Pantau kehadiran' },
@@ -1265,12 +1265,12 @@ async function handleDeleteUser(user: any) {
 
 const rbacMatrix = [
   { feature: 'Dashboard Statistik & Jadwal', siswa: true, sekretaris: true, pengajar: true, pembimbing: true, orangtua: true, superadmin: true },
-  { feature: 'Presensi Mandiri Siswa Harian & Rekap Kelas', siswa: true, sekretaris: true, pengajar: true, pembimbing: true, orangtua: false, superadmin: true },
+  { feature: 'Presensi Siswa Harian & Rekap Kelas', siswa: true, sekretaris: true, pengajar: true, pembimbing: true, orangtua: false, superadmin: true },
   { feature: 'Force Unlock Presensi Terkunci', siswa: false, sekretaris: false, pengajar: false, pembimbing: false, orangtua: false, superadmin: true },
   { feature: 'Rekap Kehadiran Kelas (Jurnal Kelas)', siswa: false, sekretaris: true, pengajar: true, pembimbing: true, orangtua: false, superadmin: true },
   { feature: 'Input & Unggah Materi/Rencana Belajar', siswa: false, sekretaris: false, pengajar: true, pembimbing: false, orangtua: false, superadmin: true },
   { feature: 'Melihat & Mengunduh Materi Ajar', siswa: true, sekretaris: true, pengajar: true, pembimbing: true, orangtua: true, superadmin: true },
-  { feature: 'Jurnal Kegiatan Belajar Mandiri Siswa', siswa: true, sekretaris: true, pengajar: false, pembimbing: true, orangtua: true, superadmin: true },
+  { feature: 'Jurnal Kegiatan Belajar Siswa', siswa: true, sekretaris: true, pengajar: false, pembimbing: true, orangtua: true, superadmin: true },
   { feature: 'Verifikasi & Konfirmasi Jurnal KBM', siswa: false, sekretaris: false, pengajar: true, pembimbing: false, orangtua: false, superadmin: true },
   { feature: 'Pengajuan Surat Izin Belajar', siswa: true, sekretaris: true, pengajar: false, pembimbing: false, orangtua: false, superadmin: true },
   { feature: 'Persetujuan / Approval Surat Izin', siswa: false, sekretaris: false, pengajar: false, pembimbing: true, orangtua: false, superadmin: true },

@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 flex flex-col">
     <AppHeader
-      :title="authStore.user?.role === 'ORANG_TUA' ? 'Jurnal Kegiatan & Materi Belajar Anak' : (isStudentOrSekre ? 'Catatan Belajar Mandiri Saya' : 'Laporan Jurnal Belajar Siswa')"
+      :title="authStore.user?.role === 'ORANG_TUA' ? 'Jurnal Kegiatan & Materi Belajar Anak' : (isStudentOrSekre ? 'Catatan Belajar Siswa' : 'Laporan Jurnal Belajar Siswa')"
       :subtitle="authStore.user?.role === 'ORANG_TUA' ? 'Pantau laporan kegiatan belajar harian anak di sekolah serta materi dari guru' : (isStudentOrSekre ? 'Catatan refleksi belajar harian Anda di sekolah yang otomatis dipantau oleh Orang Tua serta Wali Kelas' : 'Laporan catatan kegiatan belajar harian yang dilaporkan siswa dan dipantau oleh Wali Kelas serta Orang Tua')"
     >
       <template #actions>
@@ -63,7 +63,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 class="text-sm font-bold text-gray-900">
-              {{ isStudentOrSekre ? 'Riwayat Catatan Belajar Mandiri Saya' : (authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Jurnal Belajar Anak' : 'Laporan Jurnal Kegiatan Belajar Siswa di Sekolah') }}
+              {{ isStudentOrSekre ? 'Riwayat Catatan Belajar Siswa' : (authStore.user?.role === 'ORANG_TUA' ? 'Riwayat Jurnal Belajar Anak' : 'Laporan Jurnal Kegiatan Belajar Siswa di Sekolah') }}
             </h3>
             <p class="text-xs text-gray-400">
               {{ isStudentOrSekre ? 'Catatan refleksi belajar harian yang Anda laporkan dan otomatis dipantau oleh Orang Tua serta Wali Kelas' : 'Catatan kegiatan belajar harian yang dilaporkan siswa dan dipantau oleh Wali Kelas serta Orang Tua' }}

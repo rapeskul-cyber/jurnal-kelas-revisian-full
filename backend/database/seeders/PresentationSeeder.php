@@ -91,7 +91,7 @@ class PresentationSeeder extends Seeder
         );
 
         // 5. Tepat 3 Guru Pengajar & Walas
-        // Guru 1: Nurhayatul Fadilla, S.Pd (Walas XI RPL 1)
+        // Guru 1: Nurhayatul Fadilla, S.Pd (Walas XI RPL 1 & Guru MKK)
         $guru1 = User::updateOrCreate(
             ['email' => 'fadilah@smkn71.sch.id'],
             [
@@ -100,14 +100,14 @@ class PresentationSeeder extends Seeder
                 'phone' => '081210000002',
                 'nip_nis' => '19850000000023',
                 'role' => 'GURU_PEMBIMBING',
-                'specialization' => 'Konsentrasi Keahlian RPL & DPK',
+                'specialization' => 'MKK',
                 'class_id' => $class1->id,
                 'is_active' => true,
             ]
         );
         $class1->update(['advisor_id' => $guru1->id, 'secretary_id' => null]);
 
-        // Guru 2: Nurina Kartika Ayu, S.Pd (Walas XI RPL 2)
+        // Guru 2: Nurina Kartika Ayu, S.Pd (Walas XI RPL 2 & Guru MKK)
         $guru2 = User::updateOrCreate(
             ['email' => 'nurina@smkn71.sch.id'],
             [
@@ -116,14 +116,14 @@ class PresentationSeeder extends Seeder
                 'phone' => '081210000003',
                 'nip_nis' => '19850000000010',
                 'role' => 'GURU_PEMBIMBING',
-                'specialization' => 'Pendidikan Jasmani Olahraga & Kesehatan (PJOK)',
+                'specialization' => 'MKK',
                 'class_id' => $class2->id,
                 'is_active' => true,
             ]
         );
         $class2->update(['advisor_id' => $guru2->id, 'secretary_id' => null]);
 
-        // Guru 3: Faradillah Aryani, S.T (Guru Pengajar KIK-RPL / PKK)
+        // Guru 3: Faradillah Aryani, S.T (Guru Pengajar MKK)
         $guru3 = User::updateOrCreate(
             ['email' => 'faradillah@smkn71.sch.id'],
             [
@@ -132,30 +132,31 @@ class PresentationSeeder extends Seeder
                 'phone' => '081210000004',
                 'nip_nis' => '19850000000016',
                 'role' => 'GURU_PENGAJAR',
-                'specialization' => 'Kreativitas & Inovasi Kejuruan (KIK/PKK)',
+                'specialization' => 'MKK',
                 'is_active' => true,
             ]
         );
 
-        // 6. Mata Pelajaran Real SMKN 71
-        $mapelMkk = Subject::firstOrCreate(['code' => 'MKK-RPL'], ['name' => 'Mata Pelajaran Konsentrasi Keahlian RPL']);
-        $mapelPkk = Subject::firstOrCreate(['code' => 'KIK-RPL'], ['name' => 'Kreativitas & Inovasi Kejuruan (PKK) RPL']);
-        $mapelPjok = Subject::firstOrCreate(['code' => 'PJOK-RPL'], ['name' => 'Pendidikan Jasmani Olahraga & Kesehatan']);
+        // 6. Mata Pelajaran: MKK (Sesuai Jadwal SMKN 71)
+        Subject::whereIn('code', ['MKK-RPL', 'KIK-RPL', 'PJOK-RPL'])->delete();
+        $mapelMkk = Subject::updateOrCreate(['code' => 'MKK'], ['name' => 'MKK']);
 
-        // 7. Jadwal Pelajaran Hari Rabu & Seluruh Hari Sekolah
+        // 7. Jadwal Pelajaran Hari Rabu & Seluruh Hari Sekolah (Semua Mapel MKK)
         $days = ['Rabu', 'Wednesday', 'Senin', 'Selasa', 'Kamis', 'Jumat', 'Monday', 'Tuesday', 'Thursday', 'Friday'];
+
+        // Bersihkan jadwal lama agar konsisten
+        Schedule::whereIn('class_id', [$class1->id, $class2->id])->delete();
 
         $schedulesRpl1 = [
             ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru1->id, 'start' => '06:45', 'end' => '09:45', 'room' => 'R.402'],
             ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru1->id, 'start' => '10:00', 'end' => '12:15', 'room' => 'R.402'],
-            ['subject_id' => $mapelPkk->id, 'teacher_id' => $guru3->id, 'start' => '12:45', 'end' => '15:00', 'room' => 'R.405'],
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru3->id, 'start' => '12:45', 'end' => '15:00', 'room' => 'R.405'],
         ];
 
         $schedulesRpl2 = [
-            ['subject_id' => $mapelPjok->id, 'teacher_id' => $guru2->id, 'start' => '06:45', 'end' => '08:15', 'room' => 'R.409'],
-            ['subject_id' => $mapelPkk->id, 'teacher_id' => $guru3->id, 'start' => '08:15', 'end' => '09:45', 'room' => 'R.406'],
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru2->id, 'start' => '06:45', 'end' => '09:45', 'room' => 'R.406'],
             ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru3->id, 'start' => '10:00', 'end' => '12:15', 'room' => 'R.406'],
-            ['subject_id' => $mapelPjok->id, 'teacher_id' => $guru2->id, 'start' => '12:45', 'end' => '14:15', 'room' => 'R.406'],
+            ['subject_id' => $mapelMkk->id, 'teacher_id' => $guru2->id, 'start' => '12:45', 'end' => '15:00', 'room' => 'R.406'],
         ];
 
         foreach ($days as $day) {
@@ -261,7 +262,7 @@ class PresentationSeeder extends Seeder
 
         foreach ($studentsRpl1 as $i => $s) {
             $status = ($i === 2) ? 'IZIN' : 'HADIR';
-            $note = ($i === 2) ? 'Izin Dispensasi Lomba' : 'Presensi Mandiri Pukul 06:4' . $i . ' WIB';
+            $note = ($i === 2) ? 'Izin Dispensasi Lomba' : 'Hadir';
 
             AttendanceRecord::updateOrCreate(
                 ['session_id' => $session1->id, 'student_id' => $s->id],
@@ -288,7 +289,7 @@ class PresentationSeeder extends Seeder
 
         foreach ($studentsRpl2 as $i => $s) {
             $status = ($i === 1) ? 'SAKIT' : 'HADIR';
-            $note = ($i === 1) ? 'Sakit' : 'Presensi Mandiri Pukul 06:4' . ($i + 1) . ' WIB';
+            $note = ($i === 1) ? 'Sakit' : 'Hadir';
 
             AttendanceRecord::updateOrCreate(
                 ['session_id' => $session2->id, 'student_id' => $s->id],
