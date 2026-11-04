@@ -138,3 +138,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/system/broadcasts', [SystemController::class, 'sendBroadcast']);
     Route::get('/system/backup', [SystemController::class, 'downloadBackup']);
 });
+
+// Webhook Otomatis Registrasi Siswa via Google Form
+Route::post('/webhook/google-form', [\App\Http\Controllers\Api\GoogleFormWebhookController::class, 'handle']);
+
